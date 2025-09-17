@@ -1,0 +1,84 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'video.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+VideoEntity _$VideoEntityFromJson(Map<String, dynamic> json) => VideoEntity(
+  id: json['id'] as String,
+  createdAt: DateTime.parse(json['createdAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
+  title: json['title'] as String,
+  description: RichText.fromJson(json['description'] as Map<String, dynamic>?),
+  thumbnail: json['thumbnail'] == null
+      ? null
+      : MediaEntity.fromJson(json['thumbnail'] as Map<String, dynamic>),
+  url: json['url'] as String?,
+  sizeInBytes: (json['sizeInBytes'] as num?)?.toInt() ?? 0,
+  serviceType:
+      $enumDecodeNullable(_$VideoServiceTypeEnumMap, json['serviceType']) ??
+      VideoServiceType.yandex,
+  state:
+      $enumDecodeNullable(_$VideoStateEnumMap, json['state']) ??
+      VideoState.notUploaded,
+  uniqueIdentifier: json['uniqueIdentifier'] as String? ?? '',
+  duration: (json['duration'] as num?)?.toInt() ?? 0,
+  uploadedBy: UserEntity.fromJson(json['uploadedBy'] as Map<String, dynamic>),
+  uploadUrl: json['uploadUrl'] as String?,
+  publishedAt: json['publishedAt'] == null
+      ? null
+      : DateTime.parse(json['publishedAt'] as String),
+  accessType:
+      $enumDecodeNullable(_$VideoAccessTypeEnumMap, json['accessType']) ??
+      VideoAccessType.everyone,
+  accessValue: json['accessValue'] as String?,
+  reactionCounts:
+      (json['reactionCounts'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, (e as num).toInt()),
+      ) ??
+      const {},
+  myReaction: json['myReaction'] as String?,
+);
+
+Map<String, dynamic> _$VideoEntityToJson(VideoEntity instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
+      'title': instance.title,
+      'description': _richTextToJson(instance.description),
+      'thumbnail': instance.thumbnail,
+      'url': instance.url,
+      'sizeInBytes': instance.sizeInBytes,
+      'serviceType': _$VideoServiceTypeEnumMap[instance.serviceType]!,
+      'state': _$VideoStateEnumMap[instance.state]!,
+      'uniqueIdentifier': instance.uniqueIdentifier,
+      'duration': instance.duration,
+      'uploadedBy': instance.uploadedBy,
+      'uploadUrl': instance.uploadUrl,
+      'publishedAt': instance.publishedAt?.toIso8601String(),
+      'accessType': _$VideoAccessTypeEnumMap[instance.accessType]!,
+      'accessValue': instance.accessValue,
+      'reactionCounts': instance.reactionCounts,
+      'myReaction': instance.myReaction,
+    };
+
+const _$VideoServiceTypeEnumMap = {VideoServiceType.yandex: 'yandex'};
+
+const _$VideoStateEnumMap = {
+  VideoState.notUploaded: 'notUploaded',
+  VideoState.uploaded: 'uploaded',
+  VideoState.uploading: 'uploading',
+  VideoState.failed: 'failed',
+};
+
+const _$VideoAccessTypeEnumMap = {
+  VideoAccessType.everyone: 'everyone',
+  VideoAccessType.courseId: 'courseId',
+  VideoAccessType.mentorId: 'mentorId',
+  VideoAccessType.role: 'role',
+};
