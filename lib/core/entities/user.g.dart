@@ -11,7 +11,7 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => UserEntity(
   createdAt: DateTime.parse(json['createdAt'] as String),
   name: json['name'] as String,
   email: json['email'] as String,
-  role: userRoleFromJson(json['role'] as String),
+  role: UserEntity.userRoleFromJson(json['role'] as String),
   username: json['username'] as String,
   telegramUsername: json['telegramUsername'] as String?,
   telegramId: json['telegramId'] as String?,
@@ -30,7 +30,7 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'name': instance.name,
       'email': instance.email,
-      'role': userRoleToJson(instance.role),
+      'role': UserEntity.userRoleToJson(instance.role),
       'username': instance.username,
       'telegramUsername': instance.telegramUsername,
       'telegramId': instance.telegramId,
@@ -45,7 +45,9 @@ UserAvatarEntity _$UserAvatarEntityFromJson(Map<String, dynamic> json) =>
       media: json['media'] == null
           ? null
           : MediaEntity.fromJson(json['media'] as Map<String, dynamic>),
-      avatarType: avatarTypeFromJson(json['avatarType'] as String),
+      avatarType: UserAvatarEntity.avatarTypeFromJson(
+        json['avatarType'] as String,
+      ),
       telegramAvatarUrl: json['telegramAvatarUrl'] as String? ?? '',
       updatedAt: json['updatedAt'] == null
           ? null
@@ -58,7 +60,7 @@ Map<String, dynamic> _$UserAvatarEntityToJson(UserAvatarEntity instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'media': instance.media,
-      'avatarType': avatarTypeToJson(instance.avatarType),
+      'avatarType': UserAvatarEntity.avatarTypeToJson(instance.avatarType),
       'telegramAvatarUrl': instance.telegramAvatarUrl,
     };
 

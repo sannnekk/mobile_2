@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/providers/auth_state_provider.dart';
+import '../../core/providers/auth_providers.dart';
 import 'noo_button.dart';
 
 class NooLogoutButton extends ConsumerWidget {

@@ -22,5 +22,6 @@ class MediaEntity extends ApiEntity {
 
   factory MediaEntity.fromJson(Map<String, dynamic> json) =>
       _$MediaEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$MediaEntityToJson(this);
 }

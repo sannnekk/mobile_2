@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/entities/enum_helpers.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
 
@@ -12,7 +13,9 @@ enum PollQuestionType { text, number, date, file, choice, rating }
 class PollEntity extends ApiEntity {
   final String title;
   final String? description;
+  @JsonKey(fromJson: canVoteFromJson, toJson: canVoteToJson)
   final List<PollVisibility> canVote;
+  @JsonKey(fromJson: canSeeResultsFromJson, toJson: canSeeResultsToJson)
   final List<PollVisibility> canSeeResults;
   final bool requireAuth;
   final DateTime? stopAt;
@@ -37,7 +40,22 @@ class PollEntity extends ApiEntity {
 
   factory PollEntity.fromJson(Map<String, dynamic> json) =>
       _$PollEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$PollEntityToJson(this);
+
+  static List<PollVisibility> canVoteFromJson(List<dynamic> json) => json
+      .map((e) => enumFromString(PollVisibility.values, e as String))
+      .toList();
+
+  static List<String> canVoteToJson(List<PollVisibility> visibilities) =>
+      visibilities.map((e) => enumToString(e)).toList();
+
+  static List<PollVisibility> canSeeResultsFromJson(List<dynamic> json) => json
+      .map((e) => enumFromString(PollVisibility.values, e as String))
+      .toList();
+
+  static List<String> canSeeResultsToJson(List<PollVisibility> visibilities) =>
+      visibilities.map((e) => enumToString(e)).toList();
 }
 
 @JsonSerializable()
@@ -45,7 +63,9 @@ class PollQuestionEntity extends ApiEntity {
   final String pollId;
   final String text;
   final String? description;
+  @JsonKey(fromJson: questionTypeFromJson, toJson: questionTypeToJson)
   final PollQuestionType type;
+  @JsonKey(name: 'required')
   final bool isRequired; // !!! the json field name is "required"
   final List<PollAnswerEntity>? answers;
 
@@ -107,7 +127,13 @@ class PollQuestionEntity extends ApiEntity {
 
   factory PollQuestionEntity.fromJson(Map<String, dynamic> json) =>
       _$PollQuestionEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$PollQuestionEntityToJson(this);
+
+  static PollQuestionType questionTypeFromJson(String json) =>
+      enumFromString(PollQuestionType.values, json);
+
+  static String questionTypeToJson(PollQuestionType type) => enumToString(type);
 }
 
 @JsonSerializable()
@@ -137,5 +163,6 @@ class PollAnswerEntity extends ApiEntity {
 
   factory PollAnswerEntity.fromJson(Map<String, dynamic> json) =>
       _$PollAnswerEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$PollAnswerEntityToJson(this);
 }

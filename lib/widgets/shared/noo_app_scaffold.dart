@@ -28,7 +28,7 @@ class NooAppScaffold extends StatelessWidget {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
       ),
-      body: Padding(padding: const EdgeInsets.all(8), child: child),
+      body: child,
       bottomNavigationBar: Container(
         height: 70,
         decoration: BoxDecoration(

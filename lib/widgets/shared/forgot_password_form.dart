@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/services/auth_service_types.dart';
+import 'package:mobile_2/core/utils/api_response_handler.dart';
 import 'noo_text_input.dart';
 import 'noo_button.dart';
 import 'noo_card.dart';
@@ -49,23 +49,23 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
       _error = null;
     });
 
-    try {
+    final result = await ApiResponseHandler.handleCall<void>(() async {
       final auth = await ref.read(authServiceProvider.future);
-      final response = await auth.forgotPassword(
+      return auth.forgotPassword(
         AuthForgotPasswordRequest(_emailController.text.trim()),
       );
+    });
 
-      if (response is ApiEmptyResponse) {
-        setState(() => _emailSent = true);
-      } else if (response is ApiErrorResponse) {
-        setState(() => _error = response.error);
-      }
-    } catch (e) {
-      setState(() => _error = 'Произошла ошибка при отправке запроса');
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+    if (result.isSuccess) {
+      setState(() => _emailSent = true);
+    } else {
+      setState(
+        () => _error = result.error ?? 'Произошла ошибка при отправке запроса',
+      );
+    }
+
+    if (mounted) {
+      setState(() => _loading = false);
     }
   }
 

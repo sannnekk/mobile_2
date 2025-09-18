@@ -29,7 +29,7 @@ Map<String, dynamic> _$AuthLoginRequestToJson(AuthLoginRequest instance) =>
 AuthLoginResponse _$AuthLoginResponseFromJson(Map<String, dynamic> json) =>
     AuthLoginResponse(
       token: json['token'] as String,
-      payload: json['payload'] as Map<String, dynamic>,
+      payload: AuthPayload.fromJson(json['payload'] as Map<String, dynamic>),
       user: UserEntity.fromJson(json['user'] as Map<String, dynamic>),
     );
 

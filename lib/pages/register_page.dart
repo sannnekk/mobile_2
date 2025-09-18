@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/providers/register_provider.dart';
 import '../widgets/shared/noo_text_input.dart';
+import '../widgets/shared/noo_username_input.dart';
 import '../widgets/shared/noo_button.dart';
 import '../widgets/shared/noo_card.dart';
 import '../widgets/shared/noo_text_title.dart';
@@ -97,7 +98,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Регистрация успешна! Теперь войдите в систему.'),
+            content: Text(
+              'Регистрация успешна! Теперь проверьте ваш email, чтобы подтвердить регистрацию.',
+            ),
           ),
         );
         context.go('/auth');
@@ -153,9 +156,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    NooTextInput(
+                    UsernameInput(
                       controller: _usernameController,
-                      label: 'Никнейм',
                       validator: _validateUsername,
                     ),
                     const SizedBox(height: 12),

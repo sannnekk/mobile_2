@@ -1,6 +1,3 @@
-// Enum JSON conversion helpers for kebab-case <-> camelCase
-import '../entities/user.dart';
-
 String kebabToCamel(String kebab) {
   final parts = kebab.split('-');
   return parts.first +
@@ -14,16 +11,12 @@ String camelToKebab(String camel) {
   );
 }
 
-UserRole userRoleFromJson(String json) {
+T enumFromString<T>(List<T> values, String json) {
   final camel = kebabToCamel(json);
-  return UserRole.values.firstWhere((e) => e.name == camel);
+  return values.firstWhere((e) => e.toString().split('.').last == camel);
 }
 
-String userRoleToJson(UserRole role) => camelToKebab(role.name);
-
-AvatarType avatarTypeFromJson(String json) {
-  final camel = kebabToCamel(json);
-  return AvatarType.values.firstWhere((e) => e.name == camel);
+String enumToString<T>(T enumValue) {
+  final camel = enumValue.toString().split('.').last;
+  return camelToKebab(camel);
 }
-
-String avatarTypeToJson(AvatarType type) => camelToKebab(type.name);

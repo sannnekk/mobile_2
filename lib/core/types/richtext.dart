@@ -10,7 +10,8 @@ class RichText {
       return RichText._(Delta());
     }
 
-    final delta = Delta.fromJson(json['ops'] as List);
+    final ops = json['ops'];
+    final delta = ops != null ? Delta.fromJson(ops as List) : Delta();
     return RichText._(delta);
   }
 
@@ -20,7 +21,11 @@ class RichText {
 
   Delta get delta => _delta;
 
-  factory RichText.fromPlain(String text) {
-    return RichText._(Delta()..insert(text));
+  factory RichText.fromDelta(Delta delta) {
+    return RichText._(delta);
+  }
+
+  bool isEmpty() {
+    return _delta.isEmpty;
   }
 }

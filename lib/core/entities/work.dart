@@ -1,4 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/api/richtext_converter.dart';
+import 'package:mobile_2/core/entities/enum_helpers.dart';
 import 'package:mobile_2/core/entities/subject.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
 import 'package:mobile_2/core/types/richtext.dart';
@@ -15,6 +17,7 @@ enum TaskCheckingStrategy { type1, type2, type3, type4 }
 class WorkEntity extends ApiEntity {
   final String slug;
   final String name;
+  @JsonKey(fromJson: workTypeFromJson, toJson: workTypeToJson)
   final WorkType type;
   final String? description;
   final SubjectEntity? subject;
@@ -36,24 +39,35 @@ class WorkEntity extends ApiEntity {
 
   factory WorkEntity.fromJson(Map<String, dynamic> json) =>
       _$WorkEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$WorkEntityToJson(this);
+
+  static WorkType workTypeFromJson(String json) =>
+      enumFromString(WorkType.values, json);
+
+  static String workTypeToJson(WorkType type) => enumToString(type);
 }
 
 @JsonSerializable()
 class WorkTaskEntity extends ApiEntity {
   final String workId;
+  @JsonKey(fromJson: workTaskTypeFromJson, toJson: workTaskTypeToJson)
   final WorkTaskType type;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
-  final RichText? content;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
+  final RichText content;
+  @RichTextConverter()
   final RichText? checkHint;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
   final RichText? solveHint;
   final String? rightAnswer;
   final int highestScore;
   final int order;
   final bool isAnswerVisibleBeforeCheck;
   final bool isCheckOneByOneEnabled;
+  @JsonKey(
+    fromJson: taskCheckingStrategyFromJson,
+    toJson: taskCheckingStrategyToJson,
+  )
   final TaskCheckingStrategy? checkingStrategy;
 
   WorkTaskEntity({
@@ -62,7 +76,7 @@ class WorkTaskEntity extends ApiEntity {
     super.updatedAt,
     required this.workId,
     required this.type,
-    this.content,
+    required this.content,
     required this.highestScore,
     required this.order,
     this.checkHint,
@@ -75,7 +89,17 @@ class WorkTaskEntity extends ApiEntity {
 
   factory WorkTaskEntity.fromJson(Map<String, dynamic> json) =>
       _$WorkTaskEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$WorkTaskEntityToJson(this);
-}
 
-Map<String, dynamic>? _richTextToJson(RichText? r) => r?.toJson();
+  Map<String, dynamic> toJson() => _$WorkTaskEntityToJson(this);
+
+  static WorkTaskType workTaskTypeFromJson(String json) =>
+      enumFromString(WorkTaskType.values, json);
+
+  static String workTaskTypeToJson(WorkTaskType type) => enumToString(type);
+
+  static TaskCheckingStrategy? taskCheckingStrategyFromJson(String? json) =>
+      json == null ? null : enumFromString(TaskCheckingStrategy.values, json);
+
+  static String? taskCheckingStrategyToJson(TaskCheckingStrategy? type) =>
+      enumToString(type);
+}

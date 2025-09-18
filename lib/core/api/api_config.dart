@@ -1,3 +1,5 @@
+import 'package:mobile_2/app_config.dart';
+
 class ApiConfig {
   final String baseUrl;
   final Duration connectTimeout;
@@ -14,15 +16,15 @@ class ApiConfig {
   factory ApiConfig.fromEnv() {
     const base = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://api.noo-school.ru',
+      defaultValue: AppConfig.API_URL,
     );
     const connect = int.fromEnvironment(
       'API_CONNECT_TIMEOUT_SEC',
-      defaultValue: 15,
+      defaultValue: AppConfig.API_CONNECT_TIMEOUT_SEC,
     );
     const receive = int.fromEnvironment(
       'API_RECEIVE_TIMEOUT_SEC',
-      defaultValue: 30,
+      defaultValue: AppConfig.API_RECEIVE_TIMEOUT_SEC,
     );
     return ApiConfig(
       baseUrl: base,

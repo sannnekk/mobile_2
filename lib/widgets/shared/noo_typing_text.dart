@@ -163,7 +163,7 @@ class _NooTypingTextState extends State<NooTypingText>
     final textStyle = widget.style ?? defaultStyle;
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 24), // Dynamic height
+      height: 48,
       alignment: Alignment.center,
       child: LayoutBuilder(
         builder: (context, constraints) {

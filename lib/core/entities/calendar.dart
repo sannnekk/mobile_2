@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/entities/enum_helpers.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
 
 part 'calendar.g.dart';
@@ -25,6 +26,7 @@ class CalendarEventEntity extends ApiEntity {
   final String description;
   final DateTime date;
   final CalendarEventVisibility visibility;
+  @JsonKey(fromJson: eventTypeFromJson, toJson: eventTypeToJson)
   final CalendarEventType type;
   final String? url;
   final String? username;
@@ -44,5 +46,11 @@ class CalendarEventEntity extends ApiEntity {
 
   factory CalendarEventEntity.fromJson(Map<String, dynamic> json) =>
       _$CalendarEventEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$CalendarEventEntityToJson(this);
+
+  static String eventTypeToJson(CalendarEventType type) => enumToString(type);
+
+  static CalendarEventType eventTypeFromJson(String type) =>
+      enumFromString(CalendarEventType.values, type);
 }

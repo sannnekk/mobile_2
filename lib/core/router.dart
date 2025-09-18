@@ -2,14 +2,90 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_2/pages/calendar_page.dart';
+import 'package:mobile_2/pages/profile_page.dart';
+import 'package:mobile_2/pages/register_page.dart';
 import '../widgets/shared/noo_app_scaffold.dart';
 import '../pages/auth_page.dart';
 import '../pages/courses_page.dart';
 import '../pages/assigned_works_page.dart';
 import '../pages/settings_page.dart';
-import '../pages/profile_page.dart';
-import '../pages/register_page.dart';
-import 'providers/auth_state_provider.dart';
+import '../pages/course_details_page.dart';
+import 'providers/auth_providers.dart';
+
+// Typed route classes
+class SplashRoute extends GoRouteData {
+  const SplashRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const Scaffold(body: Center(child: CircularProgressIndicator()));
+}
+
+class AuthRoute extends GoRouteData {
+  const AuthRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const Scaffold(body: AuthPage());
+}
+
+class RegisterRoute extends GoRouteData {
+  const RegisterRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const RegisterPage();
+}
+
+class CoursesRoute extends GoRouteData {
+  const CoursesRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const NooAppScaffold(title: 'Курсы', child: CoursesPage());
+}
+
+class CourseDetailsRoute extends GoRouteData {
+  const CourseDetailsRoute(this.slug);
+
+  final String slug;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      CourseDetailsPage(courseSlug: slug);
+}
+
+class AssignedWorksRoute extends GoRouteData {
+  const AssignedWorksRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const NooAppScaffold(title: 'Работы', child: AssignedWorksPage());
+}
+
+class SettingsRoute extends GoRouteData {
+  const SettingsRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const NooAppScaffold(title: 'Настройки', child: SettingsPage());
+}
+
+class CalendarRoute extends GoRouteData {
+  const CalendarRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const NooAppScaffold(title: 'Календарь', child: CalendarPage());
+}
+
+class ProfileRoute extends GoRouteData {
+  const ProfileRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      const NooAppScaffold(title: 'Профиль', child: ProfilePage());
+}
 
 // Global key for router access
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -41,6 +117,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/courses',
         builder: (context, state) =>
             const NooAppScaffold(title: 'Курсы', child: CoursesPage()),
+      ),
+      GoRoute(
+        path: '/course/:slug',
+        builder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          return CourseDetailsPage(courseSlug: slug);
+        },
       ),
       GoRoute(
         path: '/assigned_works',

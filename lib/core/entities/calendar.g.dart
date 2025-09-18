@@ -20,7 +20,7 @@ CalendarEventEntity _$CalendarEventEntityFromJson(Map<String, dynamic> json) =>
         _$CalendarEventVisibilityEnumMap,
         json['visibility'],
       ),
-      type: $enumDecode(_$CalendarEventTypeEnumMap, json['type']),
+      type: CalendarEventEntity.eventTypeFromJson(json['type'] as String),
       url: json['url'] as String?,
       username: json['username'] as String?,
     );
@@ -35,7 +35,7 @@ Map<String, dynamic> _$CalendarEventEntityToJson(
   'description': instance.description,
   'date': instance.date.toIso8601String(),
   'visibility': _$CalendarEventVisibilityEnumMap[instance.visibility]!,
-  'type': _$CalendarEventTypeEnumMap[instance.type]!,
+  'type': CalendarEventEntity.eventTypeToJson(instance.type),
   'url': instance.url,
   'username': instance.username,
 };
@@ -46,12 +46,4 @@ const _$CalendarEventVisibilityEnumMap = {
   CalendarEventVisibility.allMentors: 'allMentors',
   CalendarEventVisibility.ownMentor: 'ownMentor',
   CalendarEventVisibility.private: 'private',
-};
-
-const _$CalendarEventTypeEnumMap = {
-  CalendarEventType.studentDeadline: 'studentDeadline',
-  CalendarEventType.mentorDeadline: 'mentorDeadline',
-  CalendarEventType.workChecked: 'workChecked',
-  CalendarEventType.workMade: 'workMade',
-  CalendarEventType.event: 'event',
 };

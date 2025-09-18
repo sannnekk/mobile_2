@@ -11,8 +11,12 @@ AssignedWorkProgress _$AssignedWorkProgressFromJson(
 ) => AssignedWorkProgress(
   score: (json['score'] as num?)?.toInt(),
   maxScore: (json['maxScore'] as num).toInt(),
-  solveStatus: assignedWorkSolveStatusFromJson(json['solveStatus'] as String),
-  checkStatus: assignedWorkCheckStatusFromJson(json['checkStatus'] as String),
+  solveStatus: AssignedWorkEntity._solveStatusFromString(
+    json['solveStatus'] as String,
+  ),
+  checkStatus: AssignedWorkEntity._checkStatusFromString(
+    json['checkStatus'] as String,
+  ),
 );
 
 Map<String, dynamic> _$AssignedWorkProgressToJson(
@@ -20,8 +24,8 @@ Map<String, dynamic> _$AssignedWorkProgressToJson(
 ) => <String, dynamic>{
   'score': instance.score,
   'maxScore': instance.maxScore,
-  'solveStatus': assignedWorkSolveStatusToJson(instance.solveStatus),
-  'checkStatus': assignedWorkCheckStatusToJson(instance.checkStatus),
+  'solveStatus': AssignedWorkEntity._solveStatusToString(instance.solveStatus),
+  'checkStatus': AssignedWorkEntity._checkStatusToString(instance.checkStatus),
 };
 
 AssignedWorkAnswerEntity _$AssignedWorkAnswerEntityFromJson(
@@ -34,7 +38,9 @@ AssignedWorkAnswerEntity _$AssignedWorkAnswerEntityFromJson(
       : DateTime.parse(json['updatedAt'] as String),
   taskId: json['taskId'] as String,
   word: json['word'] as String?,
-  content: RichText.fromJson(json['content'] as Map<String, dynamic>?),
+  content: const RichTextConverter().fromJson(
+    json['content'] as Map<String, dynamic>?,
+  ),
   isSubmitted: json['isSubmitted'] as bool?,
   score: (json['score'] as num?)?.toDouble(),
 );
@@ -47,7 +53,7 @@ Map<String, dynamic> _$AssignedWorkAnswerEntityToJson(
   'updatedAt': instance.updatedAt?.toIso8601String(),
   'taskId': instance.taskId,
   'word': instance.word,
-  'content': _richTextToJson(instance.content),
+  'content': const RichTextConverter().toJson(instance.content),
   'isSubmitted': instance.isSubmitted,
   'score': instance.score,
 };
@@ -61,7 +67,9 @@ AssignedWorkCommentEntity _$AssignedWorkCommentEntityFromJson(
       ? null
       : DateTime.parse(json['updatedAt'] as String),
   taskId: json['taskId'] as String,
-  content: RichText.fromJson(json['content'] as Map<String, dynamic>?),
+  content: const RichTextConverter().fromJson(
+    json['content'] as Map<String, dynamic>?,
+  ),
   score: (json['score'] as num?)?.toDouble(),
   detailedScore: (json['detailedScore'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, (e as num).toInt()),
@@ -75,7 +83,7 @@ Map<String, dynamic> _$AssignedWorkCommentEntityToJson(
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
   'taskId': instance.taskId,
-  'content': _richTextToJson(instance.content),
+  'content': const RichTextConverter().toJson(instance.content),
   'score': instance.score,
   'detailedScore': instance.detailedScore,
 };
@@ -99,12 +107,19 @@ AssignedWorkEntity _$AssignedWorkEntityFromJson(
       ? null
       : UserEntity.fromJson(json['student'] as Map<String, dynamic>),
   workId: json['workId'] as String?,
+  work: json['work'] == null
+      ? null
+      : WorkEntity.fromJson(json['work'] as Map<String, dynamic>),
   solveStatus: json['solveStatus'] == null
       ? AssignedWorkSolveStatus.notSolved
-      : assignedWorkSolveStatusFromJson(json['solveStatus'] as String),
+      : AssignedWorkEntity._solveStatusFromString(
+          json['solveStatus'] as String,
+        ),
   checkStatus: json['checkStatus'] == null
       ? AssignedWorkCheckStatus.notChecked
-      : assignedWorkCheckStatusFromJson(json['checkStatus'] as String),
+      : AssignedWorkEntity._checkStatusFromString(
+          json['checkStatus'] as String,
+        ),
   solveDeadlineAt: json['solveDeadlineAt'] == null
       ? null
       : DateTime.parse(json['solveDeadlineAt'] as String),
@@ -141,29 +156,31 @@ AssignedWorkEntity _$AssignedWorkEntityFromJson(
   isArchivedByAssistants: json['isArchivedByAssistants'] as bool? ?? false,
 );
 
-Map<String, dynamic> _$AssignedWorkEntityToJson(AssignedWorkEntity instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'createdAt': instance.createdAt.toIso8601String(),
-      'updatedAt': instance.updatedAt?.toIso8601String(),
-      'mentorIds': instance.mentorIds,
-      'mentors': instance.mentors,
-      'studentId': instance.studentId,
-      'student': instance.student,
-      'workId': instance.workId,
-      'solveStatus': assignedWorkSolveStatusToJson(instance.solveStatus),
-      'checkStatus': assignedWorkCheckStatusToJson(instance.checkStatus),
-      'solveDeadlineAt': instance.solveDeadlineAt?.toIso8601String(),
-      'solveDeadlineShifted': instance.solveDeadlineShifted,
-      'checkDeadlineAt': instance.checkDeadlineAt?.toIso8601String(),
-      'checkDeadlineShifted': instance.checkDeadlineShifted,
-      'solvedAt': instance.solvedAt?.toIso8601String(),
-      'checkedAt': instance.checkedAt?.toIso8601String(),
-      'answers': instance.answers,
-      'comments': instance.comments,
-      'score': instance.score,
-      'maxScore': instance.maxScore,
-      'isArchivedByStudent': instance.isArchivedByStudent,
-      'isArchivedByMentors': instance.isArchivedByMentors,
-      'isArchivedByAssistants': instance.isArchivedByAssistants,
-    };
+Map<String, dynamic> _$AssignedWorkEntityToJson(
+  AssignedWorkEntity instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'createdAt': instance.createdAt.toIso8601String(),
+  'updatedAt': instance.updatedAt?.toIso8601String(),
+  'mentorIds': instance.mentorIds,
+  'mentors': instance.mentors,
+  'studentId': instance.studentId,
+  'student': instance.student,
+  'workId': instance.workId,
+  'work': instance.work,
+  'solveStatus': AssignedWorkEntity._solveStatusToString(instance.solveStatus),
+  'checkStatus': AssignedWorkEntity._checkStatusToString(instance.checkStatus),
+  'solveDeadlineAt': instance.solveDeadlineAt?.toIso8601String(),
+  'solveDeadlineShifted': instance.solveDeadlineShifted,
+  'checkDeadlineAt': instance.checkDeadlineAt?.toIso8601String(),
+  'checkDeadlineShifted': instance.checkDeadlineShifted,
+  'solvedAt': instance.solvedAt?.toIso8601String(),
+  'checkedAt': instance.checkedAt?.toIso8601String(),
+  'answers': instance.answers,
+  'comments': instance.comments,
+  'score': instance.score,
+  'maxScore': instance.maxScore,
+  'isArchivedByStudent': instance.isArchivedByStudent,
+  'isArchivedByMentors': instance.isArchivedByMentors,
+  'isArchivedByAssistants': instance.isArchivedByAssistants,
+};

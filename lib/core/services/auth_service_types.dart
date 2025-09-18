@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mobile_2/core/entities/user.dart';
+import 'package:mobile_2/core/entities/auth_payload.dart';
 
 part 'auth_service_types.g.dart';
 
@@ -31,7 +32,7 @@ class AuthLoginRequest {
 @JsonSerializable()
 class AuthLoginResponse {
   final String token;
-  final Map<String, dynamic> payload;
+  final AuthPayload payload;
   final UserEntity user;
 
   AuthLoginResponse({

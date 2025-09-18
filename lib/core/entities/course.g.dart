@@ -61,11 +61,10 @@ CourseChapterEntity _$CourseChapterEntityFromJson(
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
-  courseId: json['courseId'] as String,
   name: json['name'] as String,
   titleColor: _$JsonConverterFromJson<String, Color>(
     json['titleColor'],
-    const _ColorHexConverter().fromJson,
+    const ColorHexConverter().fromJson,
   ),
   chapters:
       (json['chapters'] as List<dynamic>?)
@@ -88,11 +87,10 @@ Map<String, dynamic> _$CourseChapterEntityToJson(
   'id': instance.id,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
-  'courseId': instance.courseId,
   'name': instance.name,
   'titleColor': _$JsonConverterToJson<String, Color>(
     instance.titleColor,
-    const _ColorHexConverter().toJson,
+    const ColorHexConverter().toJson,
   ),
   'chapters': instance.chapters,
   'materials': instance.materials,
@@ -121,9 +119,10 @@ CourseMaterialEntity _$CourseMaterialEntityFromJson(
       : DateTime.parse(json['updatedAt'] as String),
   name: json['name'] as String,
   description: json['description'] as String?,
-  content: RichText.fromJson(json['content'] as Map<String, dynamic>?),
+  content: const RichTextConverter().fromJson(
+    json['content'] as Map<String, dynamic>?,
+  ),
   order: (json['order'] as num?)?.toInt() ?? 0,
-  chapterId: json['chapterId'] as String,
   workId: json['workId'] as String?,
   isActive: json['isActive'] as bool? ?? true,
   activateAt: json['activateAt'] == null
@@ -149,7 +148,7 @@ CourseMaterialEntity _$CourseMaterialEntityFromJson(
   isPinned: json['isPinned'] as bool? ?? false,
   titleColor: _$JsonConverterFromJson<String, Color>(
     json['titleColor'],
-    const _ColorHexConverter().fromJson,
+    const ColorHexConverter().fromJson,
   ),
   files:
       (json['files'] as List<dynamic>?)
@@ -167,9 +166,8 @@ Map<String, dynamic> _$CourseMaterialEntityToJson(
   'updatedAt': instance.updatedAt?.toIso8601String(),
   'name': instance.name,
   'description': instance.description,
-  'content': _richTextToJson(instance.content),
+  'content': const RichTextConverter().toJson(instance.content),
   'order': instance.order,
-  'chapterId': instance.chapterId,
   'workId': instance.workId,
   'isActive': instance.isActive,
   'activateAt': instance.activateAt?.toIso8601String(),
@@ -183,7 +181,7 @@ Map<String, dynamic> _$CourseMaterialEntityToJson(
   'isPinned': instance.isPinned,
   'titleColor': _$JsonConverterToJson<String, Color>(
     instance.titleColor,
-    const _ColorHexConverter().toJson,
+    const ColorHexConverter().toJson,
   ),
   'files': instance.files,
   'myReaction': instance.myReaction,

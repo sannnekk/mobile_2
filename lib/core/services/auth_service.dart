@@ -62,4 +62,15 @@ class AuthService {
     if (resp is ApiSingleResponse) return ApiEmptyResponse();
     return resp;
   }
+
+  Future<ApiResponse<void>> logout() async {
+    final resp = await _client.delete<void>(
+      path: '/session/current',
+      silent: true,
+      acceptEmpty: true,
+    );
+    if (resp is ApiEmptyResponse) return resp;
+    if (resp is ApiSingleResponse) return ApiEmptyResponse();
+    return resp;
+  }
 }

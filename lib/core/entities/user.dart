@@ -38,7 +38,15 @@ class UserEntity extends ApiEntity {
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>
       _$UserEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$UserEntityToJson(this);
+
+  static UserRole userRoleFromJson(String json) {
+    final camel = kebabToCamel(json);
+    return UserRole.values.firstWhere((e) => e.name == camel);
+  }
+
+  static String userRoleToJson(UserRole role) => camelToKebab(role.name);
 }
 
 @JsonSerializable()
@@ -60,7 +68,13 @@ class UserAvatarEntity extends ApiEntity {
 
   factory UserAvatarEntity.fromJson(Map<String, dynamic> json) =>
       _$UserAvatarEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$UserAvatarEntityToJson(this);
+
+  static AvatarType avatarTypeFromJson(String json) =>
+      enumFromString(AvatarType.values, json);
+
+  static String avatarTypeToJson(AvatarType type) => enumToString(type);
 }
 
 @JsonSerializable()
@@ -85,5 +99,6 @@ class MentorAssignmentEntity extends ApiEntity {
   });
   factory MentorAssignmentEntity.fromJson(Map<String, dynamic> json) =>
       _$MentorAssignmentEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$MentorAssignmentEntityToJson(this);
 }

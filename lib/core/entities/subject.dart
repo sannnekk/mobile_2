@@ -1,23 +1,14 @@
 import 'package:flutter/widgets.dart';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/api/color_converter.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
 
 part 'subject.g.dart';
 
-class _ColorHexConverter implements JsonConverter<Color, String> {
-  const _ColorHexConverter();
-  @override
-  Color fromJson(String json) =>
-      Color(int.parse(json.replaceFirst('#', '0xff')));
-  @override
-  String toJson(Color object) =>
-      '#${object.value.toRadixString(16).padLeft(8, '0')}';
-}
-
 @JsonSerializable()
 class SubjectEntity extends ApiEntity {
   final String name;
-  @_ColorHexConverter()
+  @ColorHexConverter()
   final Color color;
 
   SubjectEntity({

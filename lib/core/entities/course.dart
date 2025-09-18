@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/api/color_converter.dart';
+import 'package:mobile_2/core/api/richtext_converter.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/entities/poll.dart';
 import 'package:mobile_2/core/entities/subject.dart';
@@ -10,18 +12,6 @@ import 'package:mobile_2/core/types/api_entity.dart';
 import 'package:mobile_2/core/types/richtext.dart';
 
 part 'course.g.dart';
-
-class _ColorHexConverter implements JsonConverter<Color, String> {
-  const _ColorHexConverter();
-  @override
-  Color fromJson(String json) =>
-      Color(int.parse(json.replaceFirst('#', '0xff')));
-  @override
-  String toJson(Color object) =>
-      '#${object.value.toRadixString(16).padLeft(8, '0')}';
-}
-
-Map<String, dynamic>? _richTextToJson(RichText? r) => r?.toJson();
 
 @JsonSerializable()
 class CourseEntity extends ApiEntity {
@@ -54,14 +44,14 @@ class CourseEntity extends ApiEntity {
 
   factory CourseEntity.fromJson(Map<String, dynamic> json) =>
       _$CourseEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$CourseEntityToJson(this);
 }
 
 @JsonSerializable()
 class CourseChapterEntity extends ApiEntity {
-  final String courseId;
   final String name;
-  @_ColorHexConverter()
+  @ColorHexConverter()
   final Color? titleColor;
   final List<CourseChapterEntity> chapters;
   final List<CourseMaterialEntity> materials;
@@ -73,7 +63,6 @@ class CourseChapterEntity extends ApiEntity {
     required super.id,
     required super.createdAt,
     super.updatedAt,
-    required this.courseId,
     required this.name,
     this.titleColor,
     this.chapters = const [],
@@ -85,6 +74,7 @@ class CourseChapterEntity extends ApiEntity {
 
   factory CourseChapterEntity.fromJson(Map<String, dynamic> json) =>
       _$CourseChapterEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$CourseChapterEntityToJson(this);
 }
 
@@ -92,10 +82,9 @@ class CourseChapterEntity extends ApiEntity {
 class CourseMaterialEntity extends ApiEntity {
   final String name;
   final String? description;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
   final RichText? content;
   final int order;
-  final String chapterId;
   final String? workId;
   final bool isActive;
   final DateTime? activateAt;
@@ -107,7 +96,7 @@ class CourseMaterialEntity extends ApiEntity {
   final List<VideoEntity>? videos;
   final bool isWorkAvailable;
   final bool isPinned;
-  @_ColorHexConverter()
+  @ColorHexConverter()
   final Color? titleColor;
   final List<MediaEntity> files;
   final String? myReaction;
@@ -120,7 +109,6 @@ class CourseMaterialEntity extends ApiEntity {
     this.description,
     this.content,
     this.order = 0,
-    required this.chapterId,
     this.workId,
     this.isActive = true,
     this.activateAt,
@@ -139,6 +127,7 @@ class CourseMaterialEntity extends ApiEntity {
 
   factory CourseMaterialEntity.fromJson(Map<String, dynamic> json) =>
       _$CourseMaterialEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$CourseMaterialEntityToJson(this);
 }
 
@@ -169,5 +158,6 @@ class CourseAssignmentEntity extends ApiEntity {
 
   factory CourseAssignmentEntity.fromJson(Map<String, dynamic> json) =>
       _$CourseAssignmentEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$CourseAssignmentEntityToJson(this);
 }

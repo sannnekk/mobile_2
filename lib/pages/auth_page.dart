@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/services/auth_service_types.dart';
+import 'package:mobile_2/core/utils/api_response_handler.dart';
 import '../widgets/shared/noo_text_input.dart';
 import '../widgets/shared/noo_button.dart';
 import '../widgets/shared/noo_card.dart';
@@ -14,7 +14,6 @@ import '../widgets/shared/noo_typing_text.dart';
 import '../widgets/shared/noo_legal.dart';
 import '../constants/auth_messages.dart';
 import '../widgets/shared/auth_links_section.dart';
-import '../core/providers/auth_state_provider.dart';
 import '../widgets/shared/forgot_password_form.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
@@ -49,31 +48,36 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    try {
-      final auth = await ref.read(authServiceProvider.future);
-      final resp = await auth.login(
-        AuthLoginRequest(
-          usernameOrEmail: _usernameCtrl.text.trim(),
-          password: _passwordCtrl.text,
-        ),
+    final result = await ApiResponseHandler.handleCall<AuthLoginResponse>(
+      () async {
+        final auth = await ref.read(authServiceProvider.future);
+        return auth.login(
+          AuthLoginRequest(
+            usernameOrEmail: _usernameCtrl.text.trim(),
+            password: _passwordCtrl.text,
+          ),
+        );
+      },
+    );
+    if (result.isSuccess && result.data != null) {
+      // Update auth state
+      final authNotifier = ref.read(authStateProvider.notifier);
+      await authNotifier.login(
+        result.data!.token,
+        result.data!.payload,
+        user: result.data!.user,
       );
-      if (resp is ApiSingleResponse<AuthLoginResponse>) {
-        // Update auth state
-        final authNotifier = ref.read(authStateProvider.notifier);
-        await authNotifier.login(resp.data.token, resp.data.payload);
 
-        // Navigation will be handled by router automatically
-        if (mounted) context.go('/courses');
-      } else if (resp is ApiErrorResponse) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(resp.error)));
-        }
+      // Navigation will be handled by router automatically
+      if (mounted) context.go('/courses');
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.error ?? 'Ошибка входа')));
       }
-    } finally {
-      if (mounted) setState(() => _loading = false);
     }
+    if (mounted) setState(() => _loading = false);
   }
 
   @override

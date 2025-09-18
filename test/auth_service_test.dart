@@ -20,10 +20,9 @@ class _MockAuthFlow extends Interceptor {
             'data': {
               'token': 'abc123',
               'payload': {
-                'id': 'u1',
-                'name': 'John',
-                'email': 'john@example.com',
+                'userId': 'u1',
                 'username': 'john',
+                'role': 'student',
               },
               'user': {
                 'id': 'u1',
@@ -54,7 +53,9 @@ class _MockAuthFlow extends Interceptor {
       );
       return;
     }
-    if (path == '/auth/register' || path == '/auth/forgot-password') {
+    if (path == '/auth/register' ||
+        path == '/auth/forgot-password' ||
+        path == '/session/current') {
       handler.resolve(
         Response(requestOptions: options, statusCode: 204, data: null),
       );
@@ -136,5 +137,12 @@ void main() {
       const AuthForgotPasswordRequest('john@example.com'),
     );
     expect(fp is ApiEmptyResponse, isTrue);
+  });
+
+  test('AuthService logout makes DELETE request', () async {
+    final service = AuthService(client: client);
+
+    final resp = await service.logout();
+    expect(resp is ApiEmptyResponse, isTrue);
   });
 }

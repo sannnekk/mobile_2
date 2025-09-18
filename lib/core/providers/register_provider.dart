@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/services/auth_service_types.dart';
+import 'package:mobile_2/core/utils/api_response_handler.dart';
 
 class RegisterState {
   final bool isLoading;
@@ -30,9 +30,9 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
-    try {
+    final result = await ApiResponseHandler.handleCall<void>(() async {
       final auth = await ref.read(authServiceProvider.future);
-      final response = await auth.register(
+      return auth.register(
         AuthRegisterRequest(
           name: name.trim(),
           username: username.trim(),
@@ -40,16 +40,14 @@ class RegisterNotifier extends StateNotifier<RegisterState> {
           password: password,
         ),
       );
+    });
 
-      if (response is ApiErrorResponse) {
-        state = state.copyWith(isLoading: false, error: response.error);
-      } else {
-        state = state.copyWith(isLoading: false);
-      }
-    } catch (e) {
+    if (result.isSuccess) {
+      state = state.copyWith(isLoading: false);
+    } else {
       state = state.copyWith(
         isLoading: false,
-        error: 'Произошла ошибка при регистрации',
+        error: result.error ?? 'Произошла ошибка при регистрации',
       );
     }
   }

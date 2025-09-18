@@ -13,15 +13,17 @@ VideoEntity _$VideoEntityFromJson(Map<String, dynamic> json) => VideoEntity(
       ? null
       : DateTime.parse(json['updatedAt'] as String),
   title: json['title'] as String,
-  description: RichText.fromJson(json['description'] as Map<String, dynamic>?),
+  description: const RichTextConverter().fromJson(
+    json['description'] as Map<String, dynamic>?,
+  ),
   thumbnail: json['thumbnail'] == null
       ? null
       : MediaEntity.fromJson(json['thumbnail'] as Map<String, dynamic>),
   url: json['url'] as String?,
   sizeInBytes: (json['sizeInBytes'] as num?)?.toInt() ?? 0,
-  serviceType:
-      $enumDecodeNullable(_$VideoServiceTypeEnumMap, json['serviceType']) ??
-      VideoServiceType.yandex,
+  serviceType: json['serviceType'] == null
+      ? VideoServiceType.yandex
+      : VideoEntity.videoServiceTypeFromJson(json['serviceType'] as String),
   state:
       $enumDecodeNullable(_$VideoStateEnumMap, json['state']) ??
       VideoState.notUploaded,
@@ -32,9 +34,9 @@ VideoEntity _$VideoEntityFromJson(Map<String, dynamic> json) => VideoEntity(
   publishedAt: json['publishedAt'] == null
       ? null
       : DateTime.parse(json['publishedAt'] as String),
-  accessType:
-      $enumDecodeNullable(_$VideoAccessTypeEnumMap, json['accessType']) ??
-      VideoAccessType.everyone,
+  accessType: json['accessType'] == null
+      ? VideoAccessType.everyone
+      : VideoEntity.videoAccessTypeFromJson(json['accessType'] as String),
   accessValue: json['accessValue'] as String?,
   reactionCounts:
       (json['reactionCounts'] as Map<String, dynamic>?)?.map(
@@ -50,35 +52,26 @@ Map<String, dynamic> _$VideoEntityToJson(VideoEntity instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'title': instance.title,
-      'description': _richTextToJson(instance.description),
+      'description': const RichTextConverter().toJson(instance.description),
       'thumbnail': instance.thumbnail,
       'url': instance.url,
       'sizeInBytes': instance.sizeInBytes,
-      'serviceType': _$VideoServiceTypeEnumMap[instance.serviceType]!,
+      'serviceType': VideoEntity.videoServiceTypeToJson(instance.serviceType),
       'state': _$VideoStateEnumMap[instance.state]!,
       'uniqueIdentifier': instance.uniqueIdentifier,
       'duration': instance.duration,
       'uploadedBy': instance.uploadedBy,
       'uploadUrl': instance.uploadUrl,
       'publishedAt': instance.publishedAt?.toIso8601String(),
-      'accessType': _$VideoAccessTypeEnumMap[instance.accessType]!,
+      'accessType': VideoEntity.videoAccessTypeToJson(instance.accessType),
       'accessValue': instance.accessValue,
       'reactionCounts': instance.reactionCounts,
       'myReaction': instance.myReaction,
     };
-
-const _$VideoServiceTypeEnumMap = {VideoServiceType.yandex: 'yandex'};
 
 const _$VideoStateEnumMap = {
   VideoState.notUploaded: 'notUploaded',
   VideoState.uploaded: 'uploaded',
   VideoState.uploading: 'uploading',
   VideoState.failed: 'failed',
-};
-
-const _$VideoAccessTypeEnumMap = {
-  VideoAccessType.everyone: 'everyone',
-  VideoAccessType.courseId: 'courseId',
-  VideoAccessType.mentorId: 'mentorId',
-  VideoAccessType.role: 'role',
 };

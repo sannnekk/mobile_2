@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/utils/logger.dart';
+import '../../core/types/app_errors.dart';
 import 'api_response.dart';
 import 'api_config.dart';
 import 'interceptors.dart';
@@ -55,12 +57,24 @@ class ApiClient {
     return dio;
   }
 
-  Future<void> setToken(String token, Map<String, dynamic> payload) async {
+  Future<void> setToken(String token, Object payload) async {
     _token = token;
-    _payload = payload;
+    if (payload is Map<String, dynamic>) {
+      _payload = payload;
+    } else {
+      // Fallback: try to convert known typed payloads via toJson
+      try {
+        // ignore: avoid_dynamic_calls
+        final json = (payload as dynamic).toJson() as Map<String, dynamic>;
+        _payload = json;
+      } catch (_) {
+        // As a last resort, stringify then decode
+        _payload = jsonDecode(jsonEncode(payload)) as Map<String, dynamic>;
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
-    await prefs.setString(_payloadKey, jsonEncode(payload));
+    await prefs.setString(_payloadKey, jsonEncode(_payload));
   }
 
   Future<void> clearToken() async {
@@ -85,13 +99,13 @@ class ApiClient {
     bool requireAuth = true,
     T Function(dynamic)? fromJson,
     bool isList = false,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     bool acceptEmpty = false,
   }) async {
     if (showLoading) loadingOverlay?.call(true);
     try {
       final options = Options(headers: {...?headers});
-      final qp = QueryParams.flatten(queryParams);
+      final qp = queryParams?.toMap();
       final response = await _send(
         method,
         path,
@@ -166,7 +180,7 @@ class ApiClient {
   // Convenience HTTP methods
   Future<ApiResponse<T>> get<T>({
     required String path,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     Map<String, String>? headers,
     bool silent = false,
     bool showLoading = false,
@@ -191,7 +205,7 @@ class ApiClient {
   Future<ApiResponse<T>> post<T>({
     required String path,
     dynamic body,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     Map<String, String>? headers,
     bool silent = false,
     bool showLoading = false,
@@ -218,7 +232,7 @@ class ApiClient {
   Future<ApiResponse<T>> put<T>({
     required String path,
     dynamic body,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     Map<String, String>? headers,
     bool silent = false,
     bool showLoading = false,
@@ -245,7 +259,7 @@ class ApiClient {
   Future<ApiResponse<T>> delete<T>({
     required String path,
     dynamic body,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     Map<String, String>? headers,
     bool silent = false,
     bool showLoading = false,
@@ -272,7 +286,7 @@ class ApiClient {
   Future<ApiResponse<T>> patch<T>({
     required String path,
     dynamic body,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     Map<String, String>? headers,
     bool silent = false,
     bool showLoading = false,
@@ -306,12 +320,14 @@ class ApiClient {
     try {
       switch (method) {
         case ApiRequestType.get:
+          AppLogger.debug('GET $path with queryParams: $queryParams');
           return await _dio.get(
             path,
             queryParameters: queryParams,
             options: options,
           );
         case ApiRequestType.post:
+          AppLogger.debug('POST $path with body: $body');
           return await _dio.post(
             path,
             data: body,
@@ -319,6 +335,7 @@ class ApiClient {
             options: options,
           );
         case ApiRequestType.put:
+          AppLogger.debug('PUT $path with body: $body');
           return await _dio.put(
             path,
             data: body,
@@ -326,6 +343,7 @@ class ApiClient {
             options: options,
           );
         case ApiRequestType.delete:
+          AppLogger.debug('DELETE $path');
           return await _dio.delete(
             path,
             data: body,
@@ -333,6 +351,7 @@ class ApiClient {
             options: options,
           );
         case ApiRequestType.patch:
+          AppLogger.debug('PATCH $path with body: $body');
           return await _dio.patch(
             path,
             data: body,
@@ -341,6 +360,12 @@ class ApiClient {
           );
       }
     } on DioException catch (e) {
+      final appError = dioExceptionToAppError(e);
+      AppLogger.error(
+        'API Error: ${appError.message}',
+        appError,
+        appError.stackTrace,
+      );
       return e.response ??
           Response(
             requestOptions: e.requestOptions,
@@ -360,7 +385,7 @@ class ApiClient {
     required bool requireAuth,
     T Function(dynamic)? fromJson,
     required bool isList,
-    Map<String, dynamic>? queryParams,
+    QueryParams? queryParams,
     required String error,
   }) async {
     if (_token != null) {

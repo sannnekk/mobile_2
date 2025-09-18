@@ -14,7 +14,7 @@ SubjectEntity _$SubjectEntityFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['updatedAt'] as String),
       name: json['name'] as String,
-      color: const _ColorHexConverter().fromJson(json['color'] as String),
+      color: const ColorHexConverter().fromJson(json['color'] as String),
     );
 
 Map<String, dynamic> _$SubjectEntityToJson(SubjectEntity instance) =>
@@ -23,5 +23,5 @@ Map<String, dynamic> _$SubjectEntityToJson(SubjectEntity instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'name': instance.name,
-      'color': const _ColorHexConverter().toJson(instance.color),
+      'color': const ColorHexConverter().toJson(instance.color),
     };

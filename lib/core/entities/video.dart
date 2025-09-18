@@ -1,4 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/api/richtext_converter.dart';
+import 'package:mobile_2/core/entities/enum_helpers.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/entities/user.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
@@ -15,11 +17,12 @@ enum VideoAccessType { everyone, courseId, mentorId, role }
 @JsonSerializable()
 class VideoEntity extends ApiEntity {
   final String title;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
   final RichText? description;
   final MediaEntity? thumbnail;
   final String? url;
   final int sizeInBytes;
+  @JsonKey(fromJson: videoServiceTypeFromJson, toJson: videoServiceTypeToJson)
   final VideoServiceType serviceType;
   final VideoState state;
   final String uniqueIdentifier;
@@ -27,6 +30,7 @@ class VideoEntity extends ApiEntity {
   final UserEntity uploadedBy;
   final String? uploadUrl;
   final DateTime? publishedAt;
+  @JsonKey(fromJson: videoAccessTypeFromJson, toJson: videoAccessTypeToJson)
   final VideoAccessType accessType;
   final String? accessValue;
   final Map<String, int> reactionCounts;
@@ -56,7 +60,17 @@ class VideoEntity extends ApiEntity {
 
   factory VideoEntity.fromJson(Map<String, dynamic> json) =>
       _$VideoEntityFromJson(json);
-  Map<String, dynamic> toJson() => _$VideoEntityToJson(this);
-}
 
-Map<String, dynamic>? _richTextToJson(RichText? r) => r?.toJson();
+  Map<String, dynamic> toJson() => _$VideoEntityToJson(this);
+
+  static VideoServiceType videoServiceTypeFromJson(String json) =>
+      enumFromString(VideoServiceType.values, json);
+
+  static String videoServiceTypeToJson(VideoServiceType type) =>
+      enumToString(type);
+  static VideoAccessType videoAccessTypeFromJson(String json) =>
+      enumFromString(VideoAccessType.values, json);
+
+  static String videoAccessTypeToJson(VideoAccessType type) =>
+      enumToString(type);
+}

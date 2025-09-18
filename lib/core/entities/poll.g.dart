@@ -14,12 +14,10 @@ PollEntity _$PollEntityFromJson(Map<String, dynamic> json) => PollEntity(
       : DateTime.parse(json['updatedAt'] as String),
   title: json['title'] as String,
   description: json['description'] as String?,
-  canVote: (json['canVote'] as List<dynamic>)
-      .map((e) => $enumDecode(_$PollVisibilityEnumMap, e))
-      .toList(),
-  canSeeResults: (json['canSeeResults'] as List<dynamic>)
-      .map((e) => $enumDecode(_$PollVisibilityEnumMap, e))
-      .toList(),
+  canVote: PollEntity.canVoteFromJson(json['canVote'] as List),
+  canSeeResults: PollEntity.canSeeResultsFromJson(
+    json['canSeeResults'] as List,
+  ),
   requireAuth: json['requireAuth'] as bool? ?? false,
   stopAt: json['stopAt'] == null
       ? null
@@ -33,33 +31,21 @@ PollEntity _$PollEntityFromJson(Map<String, dynamic> json) => PollEntity(
   votedCount: (json['votedCount'] as num?)?.toInt(),
 );
 
-Map<String, dynamic> _$PollEntityToJson(
-  PollEntity instance,
-) => <String, dynamic>{
-  'id': instance.id,
-  'createdAt': instance.createdAt.toIso8601String(),
-  'updatedAt': instance.updatedAt?.toIso8601String(),
-  'title': instance.title,
-  'description': instance.description,
-  'canVote': instance.canVote.map((e) => _$PollVisibilityEnumMap[e]!).toList(),
-  'canSeeResults': instance.canSeeResults
-      .map((e) => _$PollVisibilityEnumMap[e]!)
-      .toList(),
-  'requireAuth': instance.requireAuth,
-  'stopAt': instance.stopAt?.toIso8601String(),
-  'isStopped': instance.isStopped,
-  'questions': instance.questions,
-  'votedCount': instance.votedCount,
-};
-
-const _$PollVisibilityEnumMap = {
-  PollVisibility.everyone: 'everyone',
-  PollVisibility.student: 'student',
-  PollVisibility.mentor: 'mentor',
-  PollVisibility.assistant: 'assistant',
-  PollVisibility.teacher: 'teacher',
-  PollVisibility.admin: 'admin',
-};
+Map<String, dynamic> _$PollEntityToJson(PollEntity instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'createdAt': instance.createdAt.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
+      'title': instance.title,
+      'description': instance.description,
+      'canVote': PollEntity.canVoteToJson(instance.canVote),
+      'canSeeResults': PollEntity.canSeeResultsToJson(instance.canSeeResults),
+      'requireAuth': instance.requireAuth,
+      'stopAt': instance.stopAt?.toIso8601String(),
+      'isStopped': instance.isStopped,
+      'questions': instance.questions,
+      'votedCount': instance.votedCount,
+    };
 
 PollQuestionEntity _$PollQuestionEntityFromJson(Map<String, dynamic> json) =>
     PollQuestionEntity(
@@ -71,8 +57,8 @@ PollQuestionEntity _$PollQuestionEntityFromJson(Map<String, dynamic> json) =>
       pollId: json['pollId'] as String,
       text: json['text'] as String,
       description: json['description'] as String?,
-      type: $enumDecode(_$PollQuestionTypeEnumMap, json['type']),
-      isRequired: json['isRequired'] as bool? ?? false,
+      type: PollQuestionEntity.questionTypeFromJson(json['type'] as String),
+      isRequired: json['required'] as bool? ?? false,
       answers: (json['answers'] as List<dynamic>?)
           ?.map((e) => PollAnswerEntity.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -106,8 +92,8 @@ Map<String, dynamic> _$PollQuestionEntityToJson(PollQuestionEntity instance) =>
       'pollId': instance.pollId,
       'text': instance.text,
       'description': instance.description,
-      'type': _$PollQuestionTypeEnumMap[instance.type]!,
-      'isRequired': instance.isRequired,
+      'type': PollQuestionEntity.questionTypeToJson(instance.type),
+      'required': instance.isRequired,
       'answers': instance.answers,
       'choices': instance.choices,
       'minChoices': instance.minChoices,
@@ -126,15 +112,6 @@ Map<String, dynamic> _$PollQuestionEntityToJson(PollQuestionEntity instance) =>
       'onlyFutureDate': instance.onlyFutureDate,
       'onlyPastDate': instance.onlyPastDate,
     };
-
-const _$PollQuestionTypeEnumMap = {
-  PollQuestionType.text: 'text',
-  PollQuestionType.number: 'number',
-  PollQuestionType.date: 'date',
-  PollQuestionType.file: 'file',
-  PollQuestionType.choice: 'choice',
-  PollQuestionType.rating: 'rating',
-};
 
 PollAnswerEntity _$PollAnswerEntityFromJson(Map<String, dynamic> json) =>
     PollAnswerEntity(

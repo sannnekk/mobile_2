@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mobile_2/core/api/richtext_converter.dart';
 import 'package:mobile_2/core/entities/user.dart';
 import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/types/api_entity.dart';
@@ -28,13 +29,13 @@ class AssignedWorkProgress {
   final int? score;
   final int maxScore;
   @JsonKey(
-    fromJson: assignedWorkSolveStatusFromJson,
-    toJson: assignedWorkSolveStatusToJson,
+    fromJson: AssignedWorkEntity._solveStatusFromString,
+    toJson: AssignedWorkEntity._solveStatusToString,
   )
   final AssignedWorkSolveStatus solveStatus;
   @JsonKey(
-    fromJson: assignedWorkCheckStatusFromJson,
-    toJson: assignedWorkCheckStatusToJson,
+    fromJson: AssignedWorkEntity._checkStatusFromString,
+    toJson: AssignedWorkEntity._checkStatusToString,
   )
   final AssignedWorkCheckStatus checkStatus;
 
@@ -54,7 +55,7 @@ class AssignedWorkProgress {
 class AssignedWorkAnswerEntity extends ApiEntity {
   final String taskId;
   final String? word;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
   final RichText? content;
   final bool? isSubmitted;
   final double? score;
@@ -72,13 +73,14 @@ class AssignedWorkAnswerEntity extends ApiEntity {
 
   factory AssignedWorkAnswerEntity.fromJson(Map<String, dynamic> json) =>
       _$AssignedWorkAnswerEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$AssignedWorkAnswerEntityToJson(this);
 }
 
 @JsonSerializable()
 class AssignedWorkCommentEntity extends ApiEntity {
   final String taskId;
-  @JsonKey(fromJson: RichText.fromJson, toJson: _richTextToJson)
+  @RichTextConverter()
   final RichText? content;
   final double? score;
   final Map<String, int>? detailedScore;
@@ -95,6 +97,7 @@ class AssignedWorkCommentEntity extends ApiEntity {
 
   factory AssignedWorkCommentEntity.fromJson(Map<String, dynamic> json) =>
       _$AssignedWorkCommentEntityFromJson(json);
+
   Map<String, dynamic> toJson() => _$AssignedWorkCommentEntityToJson(this);
 }
 
@@ -105,17 +108,15 @@ class AssignedWorkEntity extends ApiEntity {
   final String studentId;
   final UserEntity? student;
   final String? workId;
-  // WorkEntity isn't json_serializable yet; ignore to avoid deep generation
-  @JsonKey(ignore: true)
   final WorkEntity? work;
   @JsonKey(
-    fromJson: assignedWorkSolveStatusFromJson,
-    toJson: assignedWorkSolveStatusToJson,
+    fromJson: AssignedWorkEntity._solveStatusFromString,
+    toJson: AssignedWorkEntity._solveStatusToString,
   )
   final AssignedWorkSolveStatus solveStatus;
   @JsonKey(
-    fromJson: assignedWorkCheckStatusFromJson,
-    toJson: assignedWorkCheckStatusToJson,
+    fromJson: AssignedWorkEntity._checkStatusFromString,
+    toJson: AssignedWorkEntity._checkStatusToString,
   )
   final AssignedWorkCheckStatus checkStatus;
   final DateTime? solveDeadlineAt;
@@ -164,24 +165,16 @@ class AssignedWorkEntity extends ApiEntity {
   factory AssignedWorkEntity.fromJson(Map<String, dynamic> json) =>
       _$AssignedWorkEntityFromJson(json);
   Map<String, dynamic> toJson() => _$AssignedWorkEntityToJson(this);
+
+  static String _solveStatusToString(AssignedWorkSolveStatus status) =>
+      enumToString(status);
+
+  static AssignedWorkSolveStatus _solveStatusFromString(String status) =>
+      enumFromString(AssignedWorkSolveStatus.values, status);
+
+  static String _checkStatusToString(AssignedWorkCheckStatus status) =>
+      enumToString(status);
+
+  static AssignedWorkCheckStatus _checkStatusFromString(String status) =>
+      enumFromString(AssignedWorkCheckStatus.values, status);
 }
-
-// Enum converters for AssignedWork using shared helpers
-AssignedWorkSolveStatus assignedWorkSolveStatusFromJson(String json) {
-  final camel = kebabToCamel(json);
-  return AssignedWorkSolveStatus.values.firstWhere((e) => e.name == camel);
-}
-
-String assignedWorkSolveStatusToJson(AssignedWorkSolveStatus status) =>
-    camelToKebab(status.name);
-
-AssignedWorkCheckStatus assignedWorkCheckStatusFromJson(String json) {
-  final camel = kebabToCamel(json);
-  return AssignedWorkCheckStatus.values.firstWhere((e) => e.name == camel);
-}
-
-String assignedWorkCheckStatusToJson(AssignedWorkCheckStatus status) =>
-    camelToKebab(status.name);
-
-// Helper for RichText serialization
-Map<String, dynamic>? _richTextToJson(RichText? r) => r?.toJson();
