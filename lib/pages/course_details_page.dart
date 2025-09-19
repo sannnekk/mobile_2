@@ -101,6 +101,8 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
                   material: material,
                   path: path,
                   embedded: course.images.isNotEmpty,
+                  onToggleReaction: (reaction) =>
+                      notifier.toggleReaction(material.id, reaction),
                 ),
         );
       } else {
@@ -123,6 +125,8 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
                         material: material,
                         path: path,
                         embedded: course.images.isNotEmpty,
+                        onToggleReaction: (reaction) =>
+                            notifier.toggleReaction(material.id, reaction),
                       ),
               ),
             ),

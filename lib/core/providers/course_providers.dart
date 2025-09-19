@@ -195,6 +195,119 @@ class CourseDetailNotifier extends StateNotifier<CourseDetailState> {
     }
     return null;
   }
+
+  Future<void> toggleReaction(String materialId, String reaction) async {
+    if (!mounted || state.course == null) return;
+
+    // Optimistically update the UI
+    final updatedCourse = _updateMaterialReaction(
+      state.course!,
+      materialId,
+      reaction,
+    );
+    state = state.copyWith(course: updatedCourse);
+
+    try {
+      final result = await ApiResponseHandler.handleCall<void>(
+        () async => _courseService.toggleReaction(materialId, reaction),
+      );
+      if (!result.isSuccess) {
+        // Revert on failure
+        final revertedCourse = _updateMaterialReaction(
+          state.course!,
+          materialId,
+          null,
+        );
+        state = state.copyWith(course: revertedCourse);
+      }
+    } catch (e) {
+      // Revert on error
+      final revertedCourse = _updateMaterialReaction(
+        state.course!,
+        materialId,
+        null,
+      );
+      state = state.copyWith(course: revertedCourse);
+    }
+  }
+
+  CourseEntity _updateMaterialReaction(
+    CourseEntity course,
+    String materialId,
+    String? newReaction,
+  ) {
+    return CourseEntity(
+      id: course.id,
+      createdAt: course.createdAt,
+      updatedAt: course.updatedAt,
+      slug: course.slug,
+      name: course.name,
+      description: course.description,
+      images: course.images,
+      authors: course.authors,
+      editors: course.editors,
+      chapters: course.chapters
+          ?.map(
+            (chapter) =>
+                _updateChapterReaction(chapter, materialId, newReaction),
+          )
+          .toList(),
+      subject: course.subject,
+      subjectId: course.subjectId,
+      studentCount: course.studentCount,
+    );
+  }
+
+  CourseChapterEntity _updateChapterReaction(
+    CourseChapterEntity chapter,
+    String materialId,
+    String? newReaction,
+  ) {
+    return CourseChapterEntity(
+      id: chapter.id,
+      createdAt: chapter.createdAt,
+      updatedAt: chapter.updatedAt,
+      name: chapter.name,
+      titleColor: chapter.titleColor,
+      chapters: chapter.chapters
+          .map(
+            (subChapter) =>
+                _updateChapterReaction(subChapter, materialId, newReaction),
+          )
+          .toList(),
+      materials: chapter.materials.map((material) {
+        if (material.id == materialId) {
+          return CourseMaterialEntity(
+            id: material.id,
+            createdAt: material.createdAt,
+            updatedAt: material.updatedAt,
+            name: material.name,
+            description: material.description,
+            content: material.content,
+            order: material.order,
+            workId: material.workId,
+            isActive: material.isActive,
+            activateAt: material.activateAt,
+            work: material.work,
+            workSolveDeadline: material.workSolveDeadline,
+            workCheckDeadline: material.workCheckDeadline,
+            poll: material.poll,
+            pollId: material.pollId,
+            videos: material.videos,
+            isWorkAvailable: material.isWorkAvailable,
+            isPinned: material.isPinned,
+            titleColor: material.titleColor,
+            files: material.files,
+            myReaction: newReaction,
+          );
+        }
+        return material;
+      }).toList(),
+      order: chapter.order,
+      isActive: chapter.isActive,
+      isPinned: chapter.isPinned,
+    );
+  }
 }
 
 final courseAssignmentsNotifierProvider =

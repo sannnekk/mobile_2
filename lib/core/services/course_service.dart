@@ -43,4 +43,16 @@ class CourseService {
     );
     return resp;
   }
+
+  // Toggle reaction for a material
+  Future<ApiResponse<void>> toggleReaction(
+    String materialId,
+    String reaction,
+  ) async {
+    final resp = await _client.patch<void>(
+      path: '/course/material/$materialId/react/$reaction',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
 }

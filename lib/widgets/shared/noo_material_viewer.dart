@@ -4,6 +4,7 @@ import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/entities/poll.dart';
 import 'package:mobile_2/core/entities/video.dart';
 import 'package:mobile_2/widgets/shared/noo_file_card.dart';
+import 'package:mobile_2/widgets/shared/noo_reaction_widget.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
@@ -12,12 +13,14 @@ class MaterialViewer extends StatelessWidget {
   final CourseMaterialEntity material;
   final List<String> path;
   final bool embedded;
+  final Function(String)? onToggleReaction;
 
   const MaterialViewer({
     super.key,
     required this.material,
     this.path = const [],
     this.embedded = false,
+    this.onToggleReaction,
   });
 
   @override
@@ -54,6 +57,14 @@ class MaterialViewer extends StatelessWidget {
           if (material.files.isNotEmpty) ...[
             _buildFilesSection(context, material.files),
             const SizedBox(height: 16),
+          ],
+          if (onToggleReaction != null) ...[
+            const SizedBox(height: 24),
+            ReactionWidget(
+              currentReaction: material.myReaction,
+              availableReactions: const ['thinking', 'check'],
+              onToggle: onToggleReaction!,
+            ),
           ],
         ],
       ),

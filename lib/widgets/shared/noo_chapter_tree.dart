@@ -384,6 +384,18 @@ class _MaterialTile extends StatelessWidget {
     required this.depth,
   });
 
+  String _getDisplayText(String? reaction) {
+    if (reaction == null) return '';
+    switch (reaction) {
+      case 'thinking':
+        return '🤔';
+      case 'check':
+        return '✅';
+      default:
+        return reaction;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -415,6 +427,15 @@ class _MaterialTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (material.myReaction != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                _getDisplayText(material.myReaction),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
+            ],
           ],
         ),
       ),
