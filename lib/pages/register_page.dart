@@ -96,14 +96,39 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final state = ref.read(registerProvider);
     if (state.error == null && !state.isLoading) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Регистрация успешна! Теперь проверьте ваш email, чтобы подтвердить регистрацию.',
-            ),
-          ),
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('🎉 Регистрация успешна!'),
+              content: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Мы отправили письмо с подтверждением на ваш email.',
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'Пожалуйста, проверьте вашу почту и перейдите по ссылке в письме, чтобы активировать аккаунт.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.go('/auth');
+                  },
+                  child: const Text('Перейти к входу'),
+                ),
+              ],
+            );
+          },
         );
-        context.go('/auth');
       }
     }
   }

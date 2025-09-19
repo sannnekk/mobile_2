@@ -104,13 +104,13 @@ class _ForgotPasswordFormState extends ConsumerState<ForgotPasswordForm> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'Инструкции по восстановлению отправлены на ваш email. Проверьте почту.',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ),

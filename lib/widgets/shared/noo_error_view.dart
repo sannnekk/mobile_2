@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'noo_button.dart';
 import 'noo_text.dart';
 import 'noo_text_title.dart';
@@ -20,9 +19,10 @@ class NooErrorView extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/images/error.svg',
-              width: screenWidth * 0.8,
+            Image.asset(
+              'assets/images/error.png',
+              width: screenWidth,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: 16),
             const NooTextTitle('Ошибка'),

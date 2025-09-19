@@ -6,6 +6,7 @@ class ChapterTree extends StatefulWidget {
   final String? selectedMaterialId;
   final ValueChanged<String>? onSelectMaterial;
   final int maxDepth;
+  final ScrollController? scrollController;
 
   const ChapterTree({
     super.key,
@@ -13,6 +14,7 @@ class ChapterTree extends StatefulWidget {
     this.selectedMaterialId,
     this.onSelectMaterial,
     this.maxDepth = 3,
+    this.scrollController,
   });
 
   @override
@@ -23,8 +25,72 @@ class _ChapterTreeState extends State<ChapterTree> {
   final Map<String, bool> _expanded = {};
 
   @override
+  void initState() {
+    super.initState();
+    _initializeExpandedState();
+  }
+
+  @override
+  void didUpdateWidget(ChapterTree oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedMaterialId != widget.selectedMaterialId ||
+        oldWidget.chapters != widget.chapters) {
+      _initializeExpandedState();
+    }
+  }
+
+  void _initializeExpandedState() {
+    _expanded.clear();
+    if (widget.selectedMaterialId != null) {
+      _expandChaptersContainingMaterial(
+        widget.chapters,
+        widget.selectedMaterialId!,
+      );
+    }
+  }
+
+  void _expandChaptersContainingMaterial(
+    List<CourseChapterEntity> chapters,
+    String materialId,
+  ) {
+    for (final chapter in chapters) {
+      if (_chapterContainsMaterial(chapter, materialId)) {
+        _expanded[chapter.id] = true;
+        // Also expand parent chapters recursively
+        _expandParentChapters(chapter, materialId);
+      }
+    }
+  }
+
+  void _expandParentChapters(CourseChapterEntity chapter, String materialId) {
+    // This is a simplified version - in a real implementation you'd need to traverse up
+    // For now, we'll just ensure the current chapter is expanded
+  }
+
+  bool _chapterContainsMaterial(
+    CourseChapterEntity chapter,
+    String materialId,
+  ) {
+    // Check direct materials
+    if (chapter.materials.any((material) => material.id == materialId)) {
+      return true;
+    }
+    // Check sub-chapters recursively
+    for (final subChapter in chapter.chapters) {
+      if (_chapterContainsMaterial(subChapter, materialId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      shrinkWrap: true,
+      //physics: const NeverScrollableScrollPhysics(),
+      controller: widget.scrollController,
+      padding: EdgeInsets.zero,
       itemCount: widget.chapters.length,
       itemBuilder: (context, index) {
         final chapter = widget.chapters[index];
@@ -38,13 +104,17 @@ class _ChapterTreeState extends State<ChapterTree> {
           onSelectMaterial: widget.onSelectMaterial,
           maxDepth: widget.maxDepth,
           depth: 0,
+          expandedState: _expanded,
+          onUpdateExpansion: (chapterId, isExpanded) => setState(() {
+            _expanded[chapterId] = isExpanded;
+          }),
         );
       },
     );
   }
 }
 
-class _ChapterTile extends StatelessWidget {
+class _ChapterTile extends StatefulWidget {
   final CourseChapterEntity chapter;
   final bool isExpanded;
   final String? selectedMaterialId;
@@ -52,6 +122,8 @@ class _ChapterTile extends StatelessWidget {
   final ValueChanged<String>? onSelectMaterial;
   final int maxDepth;
   final int depth;
+  final Map<String, bool> expandedState;
+  final void Function(String, bool) onUpdateExpansion;
 
   const _ChapterTile({
     required this.chapter,
@@ -61,23 +133,69 @@ class _ChapterTile extends StatelessWidget {
     required this.onSelectMaterial,
     required this.maxDepth,
     required this.depth,
+    required this.expandedState,
+    required this.onUpdateExpansion,
   });
+
+  @override
+  State<_ChapterTile> createState() => _ChapterTileState();
+}
+
+class _ChapterTileState extends State<_ChapterTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _rotateAnimation = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    if (widget.isExpanded) {
+      _animationController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(_ChapterTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isExpanded != widget.isExpanded) {
+      if (widget.isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasChildren =
-        chapter.chapters.isNotEmpty || chapter.materials.isNotEmpty;
-    final canExpand = hasChildren && depth < maxDepth;
+        widget.chapter.chapters.isNotEmpty ||
+        widget.chapter.materials.isNotEmpty;
+    final canExpand = hasChildren && widget.depth < widget.maxDepth;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: canExpand ? onToggle : null,
+          onTap: canExpand ? widget.onToggle : null,
           child: Container(
             padding: EdgeInsets.only(
-              left: 16.0 + depth * 20.0,
+              left: 16.0 + widget.depth * 20.0,
               top: 12,
               bottom: 12,
               right: 16,
@@ -85,19 +203,24 @@ class _ChapterTile extends StatelessWidget {
             child: Row(
               children: [
                 if (canExpand)
-                  Icon(
-                    isExpanded ? Icons.expand_more : Icons.chevron_right,
-                    size: 20,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  RotationTransition(
+                    turns: _rotateAnimation,
+                    child: Icon(
+                      Icons.expand_more,
+                      size: 20,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   )
                 else
                   const SizedBox(width: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    chapter.name,
+                    widget.chapter.name,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: chapter.titleColor ?? theme.colorScheme.onSurface,
+                      color:
+                          widget.chapter.titleColor ??
+                          theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -106,33 +229,144 @@ class _ChapterTile extends StatelessWidget {
             ),
           ),
         ),
-        if (isExpanded && canExpand) ...[
-          // Materials in this chapter
-          ...chapter.materials.map(
-            (material) => _MaterialTile(
-              material: material,
-              isSelected: selectedMaterialId == material.id,
-              onSelect: onSelectMaterial != null
-                  ? () => onSelectMaterial!(material.id)
-                  : null,
-              depth: depth + 1,
-            ),
-          ),
-          // Sub-chapters
-          ...chapter.chapters.map(
-            (subChapter) => _ChapterTile(
-              chapter: subChapter,
-              isExpanded: false, // Sub-chapters start collapsed
-              selectedMaterialId: selectedMaterialId,
-              onToggle:
-                  () {}, // Sub-chapters don't toggle in this implementation
-              onSelectMaterial: onSelectMaterial,
-              maxDepth: maxDepth,
-              depth: depth + 1,
-            ),
-          ),
-        ],
+        widget.isExpanded && canExpand
+            ? Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Materials in this chapter with staggered animation
+                    ...widget.chapter.materials.asMap().entries.map(
+                      (entry) => AnimatedMaterialTile(
+                        material: entry.value,
+                        isSelected: widget.selectedMaterialId == entry.value.id,
+                        onSelect: widget.onSelectMaterial != null
+                            ? () => widget.onSelectMaterial!(entry.value.id)
+                            : null,
+                        depth: widget.depth + 1,
+                        index: entry.key,
+                        isVisible: widget.isExpanded,
+                      ),
+                    ),
+                    // Sub-chapters
+                    ...widget.chapter.chapters.map(
+                      (subChapter) => _ChapterTile(
+                        chapter: subChapter,
+                        isExpanded:
+                            widget.expandedState[subChapter.id] ?? false,
+                        selectedMaterialId: widget.selectedMaterialId,
+                        onToggle: () => widget.onUpdateExpansion(
+                          subChapter.id,
+                          !(widget.expandedState[subChapter.id] ?? false),
+                        ),
+                        onSelectMaterial: widget.onSelectMaterial,
+                        maxDepth: widget.maxDepth,
+                        depth: widget.depth + 1,
+                        expandedState: widget.expandedState,
+                        onUpdateExpansion: widget.onUpdateExpansion,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
       ],
+    );
+  }
+}
+
+class AnimatedMaterialTile extends StatefulWidget {
+  final CourseMaterialEntity material;
+  final bool isSelected;
+  final VoidCallback? onSelect;
+  final int depth;
+  final int index;
+  final bool isVisible;
+
+  const AnimatedMaterialTile({
+    super.key,
+    required this.material,
+    required this.isSelected,
+    required this.onSelect,
+    required this.depth,
+    required this.index,
+    required this.isVisible,
+  });
+
+  @override
+  State<AnimatedMaterialTile> createState() => _AnimatedMaterialTileState();
+}
+
+class _AnimatedMaterialTileState extends State<AnimatedMaterialTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    if (widget.isVisible) {
+      Future.delayed(Duration(milliseconds: widget.index * 80), () {
+        if (mounted) {
+          _animationController.forward();
+        }
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(AnimatedMaterialTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isVisible != widget.isVisible) {
+      if (widget.isVisible) {
+        Future.delayed(Duration(milliseconds: widget.index * 80), () {
+          if (mounted) {
+            _animationController.forward();
+          }
+        });
+      } else {
+        _animationController.reverse();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: _MaterialTile(
+          material: widget.material,
+          isSelected: widget.isSelected,
+          onSelect: widget.onSelect,
+          depth: widget.depth,
+        ),
+      ),
     );
   }
 }
@@ -163,25 +397,19 @@ class _MaterialTile extends StatelessWidget {
           bottom: 8,
           right: 16,
         ),
-        color: isSelected
-            ? theme.colorScheme.primaryContainer.withOpacity(0.3)
-            : null,
+        //color: isSelected ? theme.colorScheme.secondary : null,
         child: Row(
           children: [
-            Icon(
-              Icons.article,
-              size: 16,
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
-            ),
-            const SizedBox(width: 12),
+            //Icon(Icons.article, size: 16, color: theme.colorScheme.onSecondary),
+            //const SizedBox(width: 12),
             Expanded(
               child: Text(
                 material.name,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isSelected
-                      ? theme.colorScheme.primary
+                      ? theme.colorScheme.secondary
                       : theme.colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.w500 : null,
+                  fontWeight: isSelected ? FontWeight.w600 : null,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import '../../core/types/richtext.dart' as rt;
 
 class NooRichTextEditor extends StatefulWidget {
@@ -77,10 +78,143 @@ class _NooRichTextEditorState extends State<NooRichTextEditor> {
   Widget build(BuildContext context) {
     return Container(
       padding: widget.padding ?? const EdgeInsets.all(16.0),
-      child: QuillEditor(
-        controller: _controller,
-        scrollController: widget.scrollController ?? ScrollController(),
-        focusNode: FocusNode(),
+      child: Column(
+        children: [
+          if (widget.showToolbar) ...[
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.format_bold),
+                    onPressed: () =>
+                        _controller.formatSelection(Attribute.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_italic),
+                    onPressed: () =>
+                        _controller.formatSelection(Attribute.italic),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_underline),
+                    onPressed: () =>
+                        _controller.formatSelection(Attribute.underline),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_list_bulleted),
+                    onPressed: () => _controller.formatSelection(Attribute.ul),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.format_list_numbered),
+                    onPressed: () => _controller.formatSelection(Attribute.ol),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.link),
+                    onPressed: () =>
+                        _controller.formatSelection(Attribute.link),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.image),
+                    onPressed: () async {
+                      // Handle image insertion
+                      final imageUrl = await _showImageDialog(context);
+                      if (imageUrl != null && imageUrl.isNotEmpty) {
+                        final index = _controller.selection.baseOffset;
+                        _controller.document.insert(
+                          index,
+                          BlockEmbed.image(imageUrl),
+                        );
+                        _controller.updateSelection(
+                          TextSelection.collapsed(offset: index + 1),
+                          ChangeSource.local,
+                        );
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.video_camera_back),
+                    onPressed: () async {
+                      // Handle video insertion
+                      final videoUrl = await _showVideoDialog(context);
+                      if (videoUrl != null && videoUrl.isNotEmpty) {
+                        final index = _controller.selection.baseOffset;
+                        _controller.document.insert(
+                          index,
+                          BlockEmbed.video(videoUrl),
+                        );
+                        _controller.updateSelection(
+                          TextSelection.collapsed(offset: index + 1),
+                          ChangeSource.local,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+          ],
+          Expanded(
+            child: QuillEditor(
+              controller: _controller,
+              scrollController: widget.scrollController ?? ScrollController(),
+              focusNode: FocusNode(),
+              config: QuillEditorConfig(
+                embedBuilders: FlutterQuillEmbeds.editorBuilders(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showImageDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Insert Image'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Enter image URL'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Insert'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showVideoDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Insert Video'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter video URL (YouTube, etc.)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Insert'),
+          ),
+        ],
       ),
     );
   }

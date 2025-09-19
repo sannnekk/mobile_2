@@ -3,6 +3,7 @@ import 'package:mobile_2/core/entities/course.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/entities/poll.dart';
 import 'package:mobile_2/core/entities/video.dart';
+import 'package:mobile_2/widgets/shared/noo_file_card.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
@@ -77,9 +78,21 @@ class MaterialViewer extends StatelessWidget {
   }
 
   Widget _buildBreadcrumbs(BuildContext context, List<String> path) {
+    final theme = Theme.of(context);
     return Wrap(
-      spacing: 8,
-      children: path.map((segment) => NooText(segment, dimmed: true)).toList(),
+      spacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (int i = 0; i < path.length; i++) ...[
+          NooText(path[i], dimmed: true),
+          if (i < path.length - 1)
+            Icon(
+              Icons.chevron_right,
+              size: 16,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+        ],
+      ],
     );
   }
 
@@ -87,20 +100,10 @@ class MaterialViewer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 8),
         NooTextTitle('Файлы'),
         const SizedBox(height: 8),
-        ...files.map(
-          (file) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: const Icon(Icons.attach_file),
-              title: Text(file.name),
-              onTap: () {
-                // TODO: Implement file download/open
-              },
-            ),
-          ),
-        ),
+        ...files.map((file) => NooFileCard(media: file)),
       ],
     );
   }

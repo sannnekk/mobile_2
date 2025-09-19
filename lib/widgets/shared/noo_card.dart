@@ -20,10 +20,10 @@ class NooCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final card = Material(
-      elevation: elevation ?? 4,
+      elevation: elevation ?? 8,
       borderRadius: BorderRadius.circular(8),
       clipBehavior: Clip.antiAlias,
-      shadowColor: theme.shadowColor.withOpacity(0.1),
+      shadowColor: theme.shadowColor.withOpacity(0.3),
       child: Padding(padding: padding, child: child),
     );
     return Container(

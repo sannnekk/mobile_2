@@ -47,5 +47,18 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<!-- Permissions for file access and sharing -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app needs access to your photo library to share files and images.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>This app needs access to your camera to capture and share images.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>This app needs access to your microphone for audio recording and sharing.</string>
+		<!-- Permissions for external links and sharing -->
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>http</string>
+			<string>https</string>
+		</array>
 	</dict>
 </plist>

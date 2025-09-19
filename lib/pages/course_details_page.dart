@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/entities/course.dart';
 import 'package:mobile_2/core/providers/course_providers.dart';
-import 'package:mobile_2/widgets/shared/noo_draggable_bottom_sheet.dart';
 import 'package:mobile_2/widgets/shared/noo_chapter_tree.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
 import 'package:mobile_2/widgets/shared/noo_material_viewer.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_parallax_header.dart';
+import 'package:mobile_2/widgets/shared/draggable_bottom_sheet.dart';
 
 class CourseDetailsPage extends ConsumerStatefulWidget {
   final String courseSlug;
@@ -23,17 +23,52 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
   final bool _panelCollapsed = false;
   final double _panelWidth = 320;
   final ScrollController _scrollController = ScrollController();
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  String? _previousSelectedMaterialId;
+
+  @override
+  void initState() {
+    super.initState();
+    _sheetController.addListener(_onSheetChanged);
+  }
 
   @override
   void dispose() {
+    _sheetController.removeListener(_onSheetChanged);
+    _sheetController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onSheetChanged() {
+    // Optional: handle sheet changes if needed
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(courseDetailProvider(widget.courseSlug));
     final notifier = ref.read(courseDetailProvider(widget.courseSlug).notifier);
+
+    // Animate sheet based on material selection
+    if (_previousSelectedMaterialId != state.selectedMaterialId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (state.selectedMaterialId != null) {
+          _sheetController.animateTo(
+            0.1,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        } else {
+          _sheetController.animateTo(
+            0.85,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+      _previousSelectedMaterialId = state.selectedMaterialId;
+    }
 
     final theme = Theme.of(context);
     final borderColor = theme.dividerColor.withOpacity(0.15);
@@ -112,42 +147,47 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: theme.colorScheme.secondary,
-        title: NooTextTitle(state.course?.name ?? 'Курс'),
+        title: NooTextTitle(
+          state.course?.name ?? 'Курс',
+          size: NooTitleSize.small,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/courses'),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SizedBox(
-            height: constraints.maxHeight,
-            child: Stack(
-              children: [
-                body,
-                if (state.isLoading && state.course != null)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: LinearProgressIndicator(minHeight: 2),
-                  ),
-                if (state.course != null && isCompact)
-                  NooDraggableBottomSheet(
-                    children: [
-                      Expanded(
-                        child: ChapterTree(
-                          chapters: state.course!.chapters ?? [],
-                          selectedMaterialId: state.selectedMaterialId,
-                          onSelectMaterial: (id) => notifier.selectMaterial(id),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          body,
+          DraggableBottomSheet(
+            controller: _sheetController,
+            initialChildSize: state.selectedMaterialId != null ? 0.1 : 0.85,
+            minChildSize: 0.1,
+            maxChildSize: 0.9,
+            snap: true,
+            snapSizes: const [0.1, 0.85],
+            childBuilder: (context, scrollController) {
+              if (isCompact && state.course != null) {
+                return ChapterTree(
+                  chapters: state.course!.chapters ?? [],
+                  selectedMaterialId: state.selectedMaterialId,
+                  onSelectMaterial: (id) => notifier.selectMaterial(id),
+                  scrollController: scrollController,
+                );
+              } else {
+                return const SizedBox.shrink();
+              }
+            },
+          ),
+          if (state.isLoading && state.course != null)
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(minHeight: 2),
             ),
-          );
-        },
+        ],
       ),
     );
   }

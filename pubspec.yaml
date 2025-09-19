@@ -48,10 +48,12 @@ dependencies:
   pdfx: ^2.6.0
   file_picker: ^8.0.0
   shared_preferences: ^2.2.3
+  path_provider: ^2.1.3
   package_info_plus: ^8.0.2
   json_annotation: ^4.9.0
   logger: ^2.4.0
   riverpod_annotation: ^2.6.1
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:
@@ -84,7 +86,7 @@ flutter:
     # App images
     - assets/images/app-icon.png
     - assets/images/auth-icon-space.svg
-    - assets/images/error.svg
+    - assets/images/error.png
     - assets/images/profile_avatar.png
     - assets/images/placeholder.png
     - assets/images/placeholder.svg
@@ -97,6 +99,7 @@ flutter:
     - assets/icons/settings.svg
     - assets/icons/uni-hat.svg
     - assets/icons/user.svg
+    - assets/icons/pdf-file.svg
 
   fonts:
     - family: Montserrat

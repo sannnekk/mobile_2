@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import '../../core/types/richtext.dart' as rt;
 
 class NooRichTextDisplay extends StatelessWidget {
@@ -30,6 +31,9 @@ class NooRichTextDisplay extends StatelessWidget {
         ),
         scrollController: scrollController ?? ScrollController(),
         focusNode: FocusNode(),
+        config: QuillEditorConfig(
+          embedBuilders: FlutterQuillEmbeds.editorBuilders(),
+        ),
       ),
     );
   }

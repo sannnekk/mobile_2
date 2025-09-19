@@ -145,7 +145,8 @@ class _UsernameInputState extends ConsumerState<UsernameInput> {
           validator: _combinedValidator,
           enabled: widget.enabled,
         ),
-        if (checkState.status != UsernameCheckStatus.initial) ...[
+        if (checkState.status != UsernameCheckStatus.initial &&
+            _controller.text.isNotEmpty) ...[
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.only(left: 4),

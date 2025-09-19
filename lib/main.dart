@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile_2/widgets/utils/noo_theme_toggle.dart';
 import 'core/router.dart';
 import 'core/providers/api_client_provider.dart';
@@ -29,6 +31,11 @@ class NooApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
+      localizationsDelegates: [
+        ...GlobalMaterialLocalizations.delegates,
+        FlutterQuillLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en', 'US'), Locale('ru', 'RU')],
     );
   }
 }

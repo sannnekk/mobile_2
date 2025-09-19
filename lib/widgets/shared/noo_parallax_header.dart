@@ -45,30 +45,37 @@ class _ParallaxHeaderState extends State<NooParallaxHeader> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Transform.translate(
-          offset: Offset(0, -_offset),
-          child: SizedBox(
-            height: widget.height,
-            child: NooUploadedImage(
-              media: widget.media,
-              fit: BoxFit.cover,
-              height: widget.height,
-              width: double.infinity,
-            ),
-          ),
-        ),
-        SingleChildScrollView(
-          controller: widget.controller,
-          child: Column(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          height: constraints.maxHeight,
+          child: Stack(
             children: [
-              SizedBox(height: widget.height - widget.contentOverlap),
-              widget.child,
+              Transform.translate(
+                offset: Offset(0, -_offset),
+                child: SizedBox(
+                  height: widget.height,
+                  child: NooUploadedImage(
+                    media: widget.media,
+                    fit: BoxFit.cover,
+                    height: widget.height,
+                    width: double.infinity,
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                controller: widget.controller,
+                child: Column(
+                  children: [
+                    SizedBox(height: widget.height - widget.contentOverlap),
+                    widget.child,
+                  ],
+                ),
+              ),
             ],
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 }
