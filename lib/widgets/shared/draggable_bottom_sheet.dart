@@ -97,18 +97,24 @@ class _DraggableBottomSheetState extends State<DraggableBottomSheet> {
                     ? ValueListenableBuilder<double>(
                         valueListenable: _sizeNotifier,
                         builder: (context, size, child) {
-                          final switchSize = (widget.minChildSize + widget.maxChildSize) / 2;
+                          final switchSize =
+                              (widget.minChildSize + widget.maxChildSize) / 2;
                           return AnimatedSwitcher(
                             duration: const Duration(milliseconds: 200),
                             child: size < switchSize
                                 ? SingleChildScrollView(
                                     key: const ValueKey('minimized'),
                                     controller: scrollController,
-                                    child: Center(child: widget.minimizedWidget!),
+                                    child: Center(
+                                      child: widget.minimizedWidget!,
+                                    ),
                                   )
                                 : Container(
                                     key: const ValueKey('expanded'),
-                                    child: widget.childBuilder(context, scrollController),
+                                    child: widget.childBuilder(
+                                      context,
+                                      scrollController,
+                                    ),
                                   ),
                           );
                         },

@@ -17,6 +17,16 @@ class NooFileCard extends StatefulWidget {
 }
 
 class _FileCardState extends State<NooFileCard> {
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+
+  void _onDownloadProgress(bool isDownloading, double progress) {
+    setState(() {
+      _isDownloading = isDownloading;
+      _downloadProgress = progress;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isImage = _isImageFile(widget.media.src);
@@ -24,54 +34,68 @@ class _FileCardState extends State<NooFileCard> {
 
     return NooFileInteractionHandler(
       media: widget.media,
+      onDownloadProgress: _onDownloadProgress,
       child: NooCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // File preview/icon
-            if (isImage)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: NooUploadedImage(
-                  media: widget.media,
-                  height: 50,
-                  width: 50,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else if (isPdf)
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.light,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/icons/pdf-file.svg',
-                    height: 40,
-                    width: 40,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // File preview/icon
+                if (isImage)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: NooUploadedImage(
+                      media: widget.media,
+                      height: 50,
+                      width: 50,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else if (isPdf)
+                  Container(
+                    height: 50,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.light,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/icons/pdf-file.svg',
+                        height: 40,
+                        width: 40,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    height: 50,
+                    width: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.light,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.insert_drive_file, size: 40),
+                    ),
                   ),
-                ),
-              )
-            else
-              Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: AppColors.light,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Icon(Icons.insert_drive_file, size: 40),
-                ),
+
+                const SizedBox(width: 12),
+
+                // File name - takes remaining space
+                Expanded(child: NooText(widget.media.name)),
+              ],
+            ),
+            if (_isDownloading) ...[
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: _downloadProgress,
+                backgroundColor: AppColors.light,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondary),
               ),
-
-            const SizedBox(width: 12),
-
-            // File name - takes remaining space
-            Expanded(child: NooText(widget.media.name)),
+            ],
           ],
         ),
       ),
