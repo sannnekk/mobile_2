@@ -5,7 +5,9 @@ import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/providers/api_client_provider.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/services/assigned_work_service.dart';
+import 'package:mobile_2/core/types/richtext.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
+import 'package:mobile_2/core/utils/debouncer.dart';
 
 part 'assigned_work_providers.g.dart';
 
@@ -256,3 +258,141 @@ Future<AssignedWorkEntity> assignedWorkDetail(Ref ref, String workId) async {
     throw Exception(result.error ?? 'Не удалось загрузить работу');
   }
 }
+
+class AssignedWorkAnswersState {
+  final Map<String, AssignedWorkAnswerEntity> answers;
+  final bool isSaving;
+  final String? saveError;
+
+  const AssignedWorkAnswersState({
+    this.answers = const {},
+    this.isSaving = false,
+    this.saveError,
+  });
+
+  AssignedWorkAnswersState copyWith({
+    Map<String, AssignedWorkAnswerEntity>? answers,
+    bool? isSaving,
+    String? saveError,
+  }) {
+    return AssignedWorkAnswersState(
+      answers: answers ?? this.answers,
+      isSaving: isSaving ?? this.isSaving,
+      saveError: saveError ?? this.saveError,
+    );
+  }
+}
+
+class AssignedWorkAnswersNotifier
+    extends StateNotifier<AssignedWorkAnswersState> {
+  final AssignedWorkService _service;
+  final String _assignedWorkId;
+  final Ref _ref;
+  final Debouncer _debouncer;
+
+  AssignedWorkAnswersNotifier(this._service, this._assignedWorkId, this._ref)
+    : _debouncer = Debouncer(delay: const Duration(milliseconds: 1000)),
+      super(const AssignedWorkAnswersState()) {
+    // Load initial answers when the work is loaded
+    _loadInitialAnswers();
+  }
+
+  void _loadInitialAnswers() {
+    final workAsync = _ref.watch(assignedWorkDetailProvider(_assignedWorkId));
+    workAsync.whenData((work) {
+      final answersMap = <String, AssignedWorkAnswerEntity>{};
+      for (final answer in work.answers) {
+        answersMap[answer.taskId] = answer;
+      }
+      state = state.copyWith(answers: answersMap);
+    });
+  }
+
+  void updateAnswer(String taskId, String? word, RichText? content) {
+    final existingAnswer = state.answers[taskId];
+    final updatedAnswer = existingAnswer != null
+        ? AssignedWorkAnswerEntity(
+            id: existingAnswer.id,
+            createdAt: existingAnswer.createdAt,
+            updatedAt: DateTime.now(),
+            taskId: taskId,
+            word: word,
+            content: content,
+            isSubmitted: existingAnswer.isSubmitted,
+            score: existingAnswer.score,
+          )
+        : AssignedWorkAnswerEntity(
+            id: '', // Will be set by server
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            taskId: taskId,
+            word: word,
+            content: content,
+          );
+
+    state = state.copyWith(answers: {...state.answers, taskId: updatedAnswer});
+
+    // Debounce the save
+    _debouncer.debounce(() => _saveAnswer(updatedAnswer));
+  }
+
+  Future<void> _saveAnswer(AssignedWorkAnswerEntity answer) async {
+    if (!mounted) return;
+
+    state = state.copyWith(isSaving: true, saveError: null);
+    try {
+      final response = await _service.saveAnswer(_assignedWorkId, answer);
+      final result = ApiResponseHandler.handle(response);
+      if (result.isSuccess && mounted) {
+        final savedAnswerId = result.data!;
+        final savedAnswer = AssignedWorkAnswerEntity(
+          id: savedAnswerId,
+          createdAt: answer.createdAt,
+          updatedAt: answer.updatedAt,
+          taskId: answer.taskId,
+          word: answer.word,
+          content: answer.content,
+          isSubmitted: answer.isSubmitted,
+          score: answer.score,
+        );
+        state = state.copyWith(
+          answers: {...state.answers, answer.taskId: savedAnswer},
+          isSaving: false,
+        );
+      } else if (mounted) {
+        state = state.copyWith(
+          isSaving: false,
+          saveError: result.error ?? 'Ошибка сохранения',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(isSaving: false, saveError: e.toString());
+      }
+    }
+  }
+
+  void triggerSave() {
+    _debouncer.debounce(() {});
+  }
+
+  @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
+  }
+}
+
+final assignedWorkAnswersProvider =
+    StateNotifierProvider.family<
+      AssignedWorkAnswersNotifier,
+      AssignedWorkAnswersState,
+      String
+    >((ref, assignedWorkId) {
+      final serviceAsync = ref.watch(assignedWorkServiceProvider);
+      final service = serviceAsync.maybeWhen(
+        data: (s) => s,
+        orElse: () => AssignedWorkService(),
+      );
+      return AssignedWorkAnswersNotifier(service, assignedWorkId, ref);
+    });

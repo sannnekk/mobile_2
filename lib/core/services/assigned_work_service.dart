@@ -75,4 +75,30 @@ class AssignedWorkService {
     );
     return resp;
   }
+
+  // Save answer for assigned work
+  Future<ApiResponse<String>> saveAnswer(
+    String assignedWorkId,
+    AssignedWorkAnswerEntity answer,
+  ) async {
+    final resp = await _client.patch<String>(
+      path: '/assigned-work/$assignedWorkId/save-answer',
+      body: answer.toJson(),
+      fromJson: (json) => json as String,
+    );
+    return resp;
+  }
+
+  // Solve assigned work
+  Future<ApiResponse<void>> solveAssignedWork(
+    String assignedWorkId,
+    List<AssignedWorkAnswerEntity> answers,
+  ) async {
+    final resp = await _client.patch<void>(
+      path: '/assigned-work/$assignedWorkId/solve',
+      body: {'answers': answers.map((a) => a.toJson()).toList()},
+      acceptEmpty: true,
+    );
+    return resp;
+  }
 }

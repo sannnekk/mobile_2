@@ -44,7 +44,7 @@ class NooAssignedWorkTask extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                NooTextTitle('Задание ${taskNumber}'),
+                NooTextTitle('Задание $taskNumber'),
                 const SizedBox(height: 16),
 
                 // Task content
@@ -172,7 +172,7 @@ class NooAssignedWorkTask extends StatelessWidget {
                 children: [
                   NooTextTitle('Подсказка:'),
                   const SizedBox(height: 8),
-                  NooRichTextDisplay(richText: task.solveHint!),
+                  NooRichTextDisplay(richText: task.solveHint!, padding: const EdgeInsets.all(0)),
                 ],
               ),
             ),
@@ -188,7 +188,7 @@ class NooAssignedWorkTask extends StatelessWidget {
               children: [
                 NooTextTitle('Пояснение:'),
                 const SizedBox(height: 8),
-                NooRichTextDisplay(richText: task.checkHint!),
+                NooRichTextDisplay(richText: task.checkHint!, padding: const EdgeInsets.all(0)),
               ],
             ),
           ],
