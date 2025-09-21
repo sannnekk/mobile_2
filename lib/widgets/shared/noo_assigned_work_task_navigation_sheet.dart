@@ -12,12 +12,14 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   final AssignedWorkEntity? assignedWork;
   final int currentTaskIndex;
   final Function(int) onTaskSelected;
+  final ScrollController? scrollController;
 
   const NooAssignedWorkTaskNavigationSheet({
     super.key,
     required this.assignedWork,
     required this.currentTaskIndex,
     required this.onTaskSelected,
+    this.scrollController,
   });
 
   @override
@@ -84,6 +86,7 @@ class _NooAssignedWorkTaskNavigationSheetState
         final tasks = widget.assignedWork?.work?.tasks ?? [];
 
         return GridView.builder(
+          controller: widget.scrollController,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -129,6 +132,7 @@ class _NooAssignedWorkTaskNavigationSheetState
 
   Widget _buildInfoTab(BuildContext context, ThemeData theme) {
     return SingleChildScrollView(
+      controller: widget.scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

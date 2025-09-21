@@ -167,11 +167,12 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
           body,
           DraggableBottomSheet(
             controller: _sheetController,
-            initialChildSize: state.selectedMaterialId != null ? 0.1 : 0.85,
+            initialChildSize: 0.1,
             minChildSize: 0.1,
             maxChildSize: 0.9,
             snap: true,
             snapSizes: const [0.1, 0.85],
+            minimizedWidget: NooTextTitle('Материалы'),
             childBuilder: (context, scrollController) {
               if (isCompact && state.course != null) {
                 return ChapterTree(

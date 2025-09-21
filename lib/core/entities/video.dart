@@ -21,7 +21,6 @@ class VideoEntity extends ApiEntity {
   final RichText? description;
   final MediaEntity? thumbnail;
   final String? url;
-  final int sizeInBytes;
   @JsonKey(fromJson: videoServiceTypeFromJson, toJson: videoServiceTypeToJson)
   final VideoServiceType serviceType;
   final VideoState state;
@@ -44,7 +43,6 @@ class VideoEntity extends ApiEntity {
     this.description,
     this.thumbnail,
     this.url,
-    this.sizeInBytes = 0,
     this.serviceType = VideoServiceType.yandex,
     this.state = VideoState.notUploaded,
     this.uniqueIdentifier = '',

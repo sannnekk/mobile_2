@@ -7,6 +7,7 @@ import 'package:mobile_2/widgets/shared/noo_assigned_work_task.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_task_navigation_sheet.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
+import 'package:mobile_2/widgets/shared/draggable_bottom_sheet.dart';
 
 class AssignedWorkDetailPage extends ConsumerStatefulWidget {
   final String workId;
@@ -22,6 +23,8 @@ class _AssignedWorkDetailPageState
     extends ConsumerState<AssignedWorkDetailPage> {
   late PageController _pageController;
   int _currentTaskIndex = 0;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _AssignedWorkDetailPageState
   @override
   void dispose() {
     _pageController.dispose();
+    _sheetController.dispose();
     super.dispose();
   }
 
@@ -69,17 +73,6 @@ class _AssignedWorkDetailPageState
     setState(() {
       _currentTaskIndex = index;
     });
-  }
-
-  void _showTaskNavigationSheet(AssignedWorkEntity work) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => NooAssignedWorkTaskNavigationSheet(
-        assignedWork: work,
-        currentTaskIndex: _currentTaskIndex,
-        onTaskSelected: _onTaskSelected,
-      ),
-    );
   }
 
   void _sendWork() {
@@ -124,38 +117,6 @@ class _AssignedWorkDetailPageState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => NooErrorView(error: error.toString()),
       ),
-      bottomNavigationBar: workAsync.maybeWhen(
-        data: (work) => BottomAppBar(
-          color: theme.colorScheme.surface,
-          elevation: 14,
-          shadowColor: theme.colorScheme.onSurface,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.list),
-                onPressed: () => _showTaskNavigationSheet(work),
-                tooltip: 'Навигация по заданиям',
-              ),
-              GestureDetector(
-                onVerticalDragUpdate: (details) {
-                  // Detect upward swipe
-                  if (details.delta.dy < -10) {
-                    // Negative delta means upward movement
-                    _showTaskNavigationSheet(work);
-                  }
-                },
-                child: Text(
-                  '${_currentTaskIndex + 1} / ${work.work?.tasks?.length ?? 0}',
-                  style: theme.textTheme.bodyLarge,
-                ),
-              ),
-              const SizedBox(width: 48), // Balance the icon button
-            ],
-          ),
-        ),
-        orElse: () => null,
-      ),
     );
   }
 
@@ -191,30 +152,55 @@ class _AssignedWorkDetailPageState
       return const Center(child: Text('Задания не найдены'));
     }
 
-    return PageView.builder(
-      controller: _pageController,
-      onPageChanged: _onPageChanged,
-      itemCount: tasks.length,
-      itemBuilder: (context, index) {
-        final task = tasks[index];
-        final answer = work.answers
-            .where((a) => a.taskId == task.id)
-            .firstOrNull;
-        final comment = work.comments
-            .where((c) => c.taskId == task.id)
-            .firstOrNull;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        PageView.builder(
+          controller: _pageController,
+          onPageChanged: _onPageChanged,
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            final task = tasks[index];
+            final answer = work.answers
+                .where((a) => a.taskId == task.id)
+                .firstOrNull;
+            final comment = work.comments
+                .where((c) => c.taskId == task.id)
+                .firstOrNull;
 
-        return NooAssignedWorkTask(
-          task: task,
-          answer: answer,
-          comment: comment,
-          mode: mode,
-          taskNumber: task.order,
-          onAnswerChanged: (taskId, word, content) {
-            // TODO: Handle answer changes
+            return NooAssignedWorkTask(
+              task: task,
+              answer: answer,
+              comment: comment,
+              mode: mode,
+              taskNumber: task.order,
+              onAnswerChanged: (taskId, word, content) {
+                // TODO: Handle answer changes
+              },
+            );
           },
-        );
-      },
+        ),
+        DraggableBottomSheet(
+          controller: _sheetController,
+          initialChildSize: 0.1,
+          minChildSize: 0.1,
+          maxChildSize: 0.9,
+          snap: true,
+          snapSizes: const [0.1, 0.85],
+          minimizedWidget: Text(
+            '${_currentTaskIndex + 1} / ${work.work?.tasks?.length ?? 0}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          childBuilder: (context, scrollController) {
+            return NooAssignedWorkTaskNavigationSheet(
+              assignedWork: work,
+              currentTaskIndex: _currentTaskIndex,
+              onTaskSelected: _onTaskSelected,
+              scrollController: scrollController,
+            );
+          },
+        ),
+      ],
     );
   }
 }

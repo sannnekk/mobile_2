@@ -307,15 +307,15 @@ class _AnimatedMaterialTileState extends State<AnimatedMaterialTile>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
     _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, -0.1), end: Offset.zero).animate(
+        Tween<Offset>(begin: const Offset(0.3, 0), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _animationController,
-            curve: Curves.easeOutCubic,
+            curve: Curves.elasticOut,
           ),
         );
 
@@ -324,7 +324,7 @@ class _AnimatedMaterialTileState extends State<AnimatedMaterialTile>
     );
 
     if (widget.isVisible) {
-      Future.delayed(Duration(milliseconds: widget.index * 80), () {
+      Future.delayed(Duration(milliseconds: widget.index * 50), () {
         if (mounted) {
           _animationController.forward();
         }
@@ -337,7 +337,7 @@ class _AnimatedMaterialTileState extends State<AnimatedMaterialTile>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isVisible != widget.isVisible) {
       if (widget.isVisible) {
-        Future.delayed(Duration(milliseconds: widget.index * 80), () {
+        Future.delayed(Duration(milliseconds: widget.index * 50), () {
           if (mounted) {
             _animationController.forward();
           }

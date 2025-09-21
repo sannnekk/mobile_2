@@ -27,7 +27,7 @@ final assignedWorkServiceProvider =
 typedef AssignedWorkServiceRef =
     AutoDisposeFutureProviderRef<AssignedWorkService>;
 String _$assignedWorkDetailHash() =>
-    r'e31808e1cbb8f50c876076728d7252364d2ac57d';
+    r'af5b36c099c1791a8b8e74db1b6d2520fe6400c4';
 
 /// Copied from Dart SDK
 class _SystemHash {

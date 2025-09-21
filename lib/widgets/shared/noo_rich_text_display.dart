@@ -33,6 +33,8 @@ class NooRichTextDisplay extends StatelessWidget {
         focusNode: FocusNode(),
         config: QuillEditorConfig(
           embedBuilders: FlutterQuillEmbeds.editorBuilders(),
+          customStyleBuilder: (attribute) =>
+              textStyle ?? const TextStyle(height: 1.8),
         ),
       ),
     );

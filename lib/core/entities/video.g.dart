@@ -20,7 +20,6 @@ VideoEntity _$VideoEntityFromJson(Map<String, dynamic> json) => VideoEntity(
       ? null
       : MediaEntity.fromJson(json['thumbnail'] as Map<String, dynamic>),
   url: json['url'] as String?,
-  sizeInBytes: (json['sizeInBytes'] as num?)?.toInt() ?? 0,
   serviceType: json['serviceType'] == null
       ? VideoServiceType.yandex
       : VideoEntity.videoServiceTypeFromJson(json['serviceType'] as String),
@@ -55,7 +54,6 @@ Map<String, dynamic> _$VideoEntityToJson(VideoEntity instance) =>
       'description': const RichTextConverter().toJson(instance.description),
       'thumbnail': instance.thumbnail,
       'url': instance.url,
-      'sizeInBytes': instance.sizeInBytes,
       'serviceType': VideoEntity.videoServiceTypeToJson(instance.serviceType),
       'state': _$VideoStateEnumMap[instance.state]!,
       'uniqueIdentifier': instance.uniqueIdentifier,
