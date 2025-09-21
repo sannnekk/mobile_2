@@ -285,6 +285,7 @@ class _AssignedWorkDetailPageState
           childBuilder: (context, scrollController) {
             return NooAssignedWorkTaskNavigationSheet(
               assignedWork: work,
+              answersState: answersState,
               currentTaskIndex: _currentTaskIndex,
               onTaskSelected: _onTaskSelected,
               scrollController: scrollController,

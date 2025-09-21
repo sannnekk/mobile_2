@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
+import 'package:mobile_2/core/entities/work.dart';
+import 'package:mobile_2/core/providers/assigned_work_providers.dart';
+import 'package:mobile_2/widgets/shared/noo_assigned_work_task.dart';
 import 'package:mobile_2/widgets/shared/noo_subject.dart';
 import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
@@ -10,6 +13,7 @@ import 'package:mobile_2/core/utils/date_helpers.dart';
 
 class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   final AssignedWorkEntity? assignedWork;
+  final AssignedWorkAnswersState answersState;
   final int currentTaskIndex;
   final Function(int) onTaskSelected;
   final ScrollController? scrollController;
@@ -17,6 +21,7 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   const NooAssignedWorkTaskNavigationSheet({
     super.key,
     required this.assignedWork,
+    required this.answersState,
     required this.currentTaskIndex,
     required this.onTaskSelected,
     this.scrollController,
@@ -42,6 +47,68 @@ class _NooAssignedWorkTaskNavigationSheetState
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  AssignedWorkMode _getMode(AssignedWorkEntity work) {
+    // Check if it's in check mode (checked statuses)
+    if (work.checkStatus == AssignedWorkCheckStatus.checkedInDeadline ||
+        work.checkStatus == AssignedWorkCheckStatus.checkedAfterDeadline ||
+        work.checkStatus == AssignedWorkCheckStatus.checkedAutomatically) {
+      return AssignedWorkMode.read;
+    }
+
+    // Otherwise, based on solve status
+    switch (work.solveStatus) {
+      case AssignedWorkSolveStatus.notStarted:
+      case AssignedWorkSolveStatus.inProgress:
+        return AssignedWorkMode.solve;
+      case AssignedWorkSolveStatus.madeInDeadline:
+      case AssignedWorkSolveStatus.madeAfterDeadline:
+        return AssignedWorkMode.read;
+    }
+  }
+
+  Color _getTaskBorderColor(
+    BuildContext context,
+    AssignedWorkEntity work,
+    WorkTaskEntity task,
+    AssignedWorkAnswerEntity? answer,
+    AssignedWorkCommentEntity? comment,
+  ) {
+    final theme = Theme.of(context);
+    final mode = _getMode(work);
+    final hasAnswer = answer != null;
+    final hasComment = comment != null;
+    final commentScore = comment?.score;
+
+    // Success: answer submitted, has comment, and comment.score == task.highestScore
+    if (hasAnswer &&
+        hasComment &&
+        commentScore == task.highestScore.toDouble()) {
+      return Colors.green; // success color
+    }
+
+    // Danger: (answer submitted, has comment, score == 0) OR (mode is read, work is checked, no comment)
+    final isWorkChecked =
+        work.checkStatus == AssignedWorkCheckStatus.checkedInDeadline ||
+        work.checkStatus == AssignedWorkCheckStatus.checkedAfterDeadline ||
+        work.checkStatus == AssignedWorkCheckStatus.checkedAutomatically;
+
+    if ((hasAnswer && hasComment && commentScore == 0) ||
+        (mode == AssignedWorkMode.read && isWorkChecked && !hasComment)) {
+      return Colors.red; // danger color
+    }
+
+    // Warning: answer submitted, has comment, score != 0 and score != highestScore
+    if (hasAnswer &&
+        hasComment &&
+        commentScore != 0 &&
+        commentScore != task.highestScore.toDouble()) {
+      return Colors.orange; // warning color
+    }
+
+    // Default: no special color
+    return theme.dividerColor;
   }
 
   @override
@@ -97,6 +164,21 @@ class _NooAssignedWorkTaskNavigationSheetState
           itemBuilder: (context, index) {
             final task = tasks[index];
             final isCurrent = index == widget.currentTaskIndex;
+            final answer = widget.answersState.answers[task.id];
+            final comment = widget.assignedWork?.comments
+                .where((c) => c.taskId == task.id)
+                .firstOrNull;
+            final borderColor = isCurrent
+                ? theme.colorScheme.secondary
+                : (widget.assignedWork != null
+                      ? _getTaskBorderColor(
+                          context,
+                          widget.assignedWork!,
+                          task,
+                          answer,
+                          comment,
+                        )
+                      : theme.dividerColor);
 
             return InkWell(
               onTap: () {
@@ -106,12 +188,7 @@ class _NooAssignedWorkTaskNavigationSheetState
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isCurrent
-                        ? theme.colorScheme.secondary
-                        : theme.dividerColor,
-                    width: 2,
-                  ),
+                  border: Border.all(color: borderColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
