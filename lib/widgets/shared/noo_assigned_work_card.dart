@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
@@ -34,13 +35,14 @@ class AssignedWorkCard extends StatelessWidget {
         const SizedBox(height: 8),
 
         // Statuses row
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
           children: [
             _buildStatusChip(
               _getSolveStatusText(work.solveStatus),
               _getSolveStatusColor(work.solveStatus),
             ),
-            const SizedBox(width: 8),
             _buildStatusChip(
               _getCheckStatusText(work.checkStatus),
               _getCheckStatusColor(work.checkStatus),
@@ -52,31 +54,42 @@ class AssignedWorkCard extends StatelessWidget {
 
         // Deadlines
         if (work.solveDeadlineAt != null || work.checkDeadlineAt != null) ...[
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 4,
             children: [
               if (work.solveDeadlineAt != null) ...[
-                Icon(
-                  Icons.schedule,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Решить до ${_formatDate(work.solveDeadlineAt!)}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.schedule,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Решить до ${_formatDate(work.solveDeadlineAt!)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ],
               if (work.checkDeadlineAt != null) ...[
-                const SizedBox(width: 16),
-                Icon(
-                  Icons.check_circle_outline,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Проверка до ${_formatDate(work.checkDeadlineAt!)}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Проверка до ${_formatDate(work.checkDeadlineAt!)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ],
             ],
@@ -129,8 +142,12 @@ class AssignedWorkCard extends StatelessWidget {
     );
 
     return GestureDetector(
+      onTap: () => _navigateToDetail(context),
       onLongPress: () => _showActionsMenu(context),
-      child: NooCard(child: cardContent),
+      child: SizedBox(
+        width: double.infinity,
+        child: NooCard(child: cardContent),
+      ),
     );
   }
 
@@ -232,5 +249,9 @@ class AssignedWorkCard extends StatelessWidget {
         }).toList(),
       ),
     );
+  }
+
+  void _navigateToDetail(BuildContext context) {
+    context.go('/assigned_work/${work.id}');
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/pages/calendar_page.dart';
+import 'package:mobile_2/pages/course_details_page.dart';
 import 'package:mobile_2/pages/profile_page.dart';
 import 'package:mobile_2/pages/register_page.dart';
 import '../widgets/shared/noo_app_scaffold.dart';
@@ -9,8 +11,7 @@ import '../pages/auth_page.dart';
 import '../pages/courses_page.dart';
 import '../pages/assigned_works_page.dart';
 import '../pages/settings_page.dart';
-import '../pages/course_details_page.dart';
-import 'providers/auth_providers.dart';
+import '../pages/assigned_work_detail_page.dart';
 
 // Typed route classes
 class SplashRoute extends GoRouteData {
@@ -61,6 +62,16 @@ class AssignedWorksRoute extends GoRouteData {
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const NooAppScaffold(title: 'Работы', child: AssignedWorksPage());
+}
+
+class AssignedWorkDetailRoute extends GoRouteData {
+  const AssignedWorkDetailRoute(this.workId);
+
+  final String workId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      AssignedWorkDetailPage(workId: workId);
 }
 
 class SettingsRoute extends GoRouteData {
@@ -129,6 +140,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/assigned_works',
         builder: (context, state) =>
             const NooAppScaffold(title: 'Работы', child: AssignedWorksPage()),
+      ),
+      GoRoute(
+        path: '/assigned_work/:workId',
+        builder: (context, state) {
+          final workId = state.pathParameters['workId']!;
+          return AssignedWorkDetailPage(workId: workId);
+        },
       ),
       GoRoute(
         path: '/settings',

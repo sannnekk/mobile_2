@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_2/widgets/shared/noo_text.dart';
 
 /// A reusable widget that groups a list of items by date and displays them
 /// with date headers.
@@ -70,25 +71,24 @@ class NooGroupedListByDate<T> extends StatelessWidget {
             // Date header
             Padding(
               padding: EdgeInsets.symmetric(vertical: groupSpacing),
-              child: Text(
-                group.date,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.normal,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              child: NooText(group.date, dimmed: true),
             ),
             // Items for this date
-            ...group.items
-                .map(itemBuilder)
-                .expand(
-                  (widget) => [
-                    widget,
-                    if (itemSpacing > 0) SizedBox(height: itemSpacing),
-                  ],
-                )
-                .toList()
-              ..removeLast(), // Remove the last spacing
+            ...(() {
+              final itemWidgets = group.items
+                  .map(itemBuilder)
+                  .expand(
+                    (widget) => [
+                      widget,
+                      if (itemSpacing > 0) SizedBox(height: itemSpacing),
+                    ],
+                  )
+                  .toList();
+              if (itemSpacing > 0) {
+                itemWidgets.removeLast(); // Remove the last spacing
+              }
+              return itemWidgets;
+            })(),
           ],
         );
       },

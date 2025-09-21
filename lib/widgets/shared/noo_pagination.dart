@@ -109,7 +109,9 @@ class NooPagination extends StatelessWidget {
           backgroundColor: isSelected
               ? Theme.of(context).colorScheme.secondary
               : Colors.transparent,
-          foregroundColor: isSelected ? Colors.white : null,
+          foregroundColor: isSelected
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurface,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           minimumSize: const Size(40, 40),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
