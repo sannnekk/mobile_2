@@ -20,7 +20,8 @@ class NooFileInteractionHandler extends StatefulWidget {
   });
 
   @override
-  State<NooFileInteractionHandler> createState() => _NooFileInteractionHandlerState();
+  State<NooFileInteractionHandler> createState() =>
+      _NooFileInteractionHandlerState();
 }
 
 class _NooFileInteractionHandlerState extends State<NooFileInteractionHandler> {

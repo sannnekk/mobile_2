@@ -165,27 +165,30 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
         fit: StackFit.expand,
         children: [
           body,
-          DraggableBottomSheet(
-            controller: _sheetController,
-            initialChildSize: 0.1,
-            minChildSize: 0.1,
-            maxChildSize: 0.9,
-            snap: true,
-            snapSizes: const [0.1, 0.85],
-            minimizedWidget: NooTextTitle('Материалы'),
-            childBuilder: (context, scrollController) {
-              if (isCompact && state.course != null) {
-                return ChapterTree(
-                  chapters: state.course!.chapters ?? [],
-                  selectedMaterialId: state.selectedMaterialId,
-                  onSelectMaterial: (id) => notifier.selectMaterial(id),
-                  scrollController: scrollController,
-                );
-              } else {
-                return const SizedBox.shrink();
-              }
-            },
-          ),
+          NooLoader(),
+          // Only show the sheet when not initially loading
+          if (!(state.isLoading && state.course == null))
+            DraggableBottomSheet(
+              controller: _sheetController,
+              initialChildSize: 0.1,
+              minChildSize: 0.1,
+              maxChildSize: 0.9,
+              snap: true,
+              snapSizes: const [0.1, 0.85],
+              minimizedWidget: NooTextTitle('Материалы'),
+              childBuilder: (context, scrollController) {
+                if (isCompact && state.course != null) {
+                  return ChapterTree(
+                    chapters: state.course!.chapters ?? [],
+                    selectedMaterialId: state.selectedMaterialId,
+                    onSelectMaterial: (id) => notifier.selectMaterial(id),
+                    scrollController: scrollController,
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
+              },
+            ),
           if (state.isLoading && state.course != null)
             const Positioned(
               top: 0,
