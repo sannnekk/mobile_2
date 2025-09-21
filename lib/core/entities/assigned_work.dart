@@ -10,10 +10,10 @@ part 'assigned_work.g.dart';
 
 // Server sends enums in kebab-case; convert to/from camelCase names
 enum AssignedWorkSolveStatus {
-  notSolved,
+  notStarted,
   inProgress,
-  solvedInDeadline,
-  solvedAfterDeadline,
+  madeInDeadline,
+  madeAfterDeadline,
 }
 
 enum AssignedWorkCheckStatus {
@@ -145,7 +145,7 @@ class AssignedWorkEntity extends ApiEntity {
     this.student,
     this.workId,
     this.work,
-    this.solveStatus = AssignedWorkSolveStatus.notSolved,
+    this.solveStatus = AssignedWorkSolveStatus.notStarted,
     this.checkStatus = AssignedWorkCheckStatus.notChecked,
     this.solveDeadlineAt,
     this.solveDeadlineShifted = false,

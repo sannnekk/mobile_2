@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../styles/colors.dart';
+import 'noo_loader.dart';
 
 enum NooButtonStyle { primary, secondary, inline, danger }
 
@@ -65,15 +66,6 @@ class NooButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget _spinner(Color color) => SizedBox(
-      width: 16,
-      height: 16,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(color),
-      ),
-    );
-
     final resolvedTextColor = _textColor(context);
 
     final displayLabel = loading ? '' : label;
@@ -102,10 +94,7 @@ class NooButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (loading) ...[
-            _spinner(resolvedTextColor),
-            const SizedBox(width: 8),
-          ],
+          if (loading) ...[const NooLoader(size: 16), const SizedBox(width: 8)],
           if (icon != null) ...[icon!, const SizedBox(width: 8)],
           Text(
             displayLabel,

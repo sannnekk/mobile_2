@@ -111,7 +111,7 @@ AssignedWorkEntity _$AssignedWorkEntityFromJson(
       ? null
       : WorkEntity.fromJson(json['work'] as Map<String, dynamic>),
   solveStatus: json['solveStatus'] == null
-      ? AssignedWorkSolveStatus.notSolved
+      ? AssignedWorkSolveStatus.notStarted
       : AssignedWorkEntity._solveStatusFromString(
           json['solveStatus'] as String,
         ),

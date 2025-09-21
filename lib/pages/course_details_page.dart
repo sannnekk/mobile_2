@@ -5,6 +5,7 @@ import 'package:mobile_2/core/entities/course.dart';
 import 'package:mobile_2/core/providers/course_providers.dart';
 import 'package:mobile_2/widgets/shared/noo_chapter_tree.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
+import 'package:mobile_2/widgets/shared/noo_loader.dart';
 import 'package:mobile_2/widgets/shared/noo_material_viewer.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_parallax_header.dart';
@@ -78,7 +79,7 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
 
     Widget body;
     if (state.isLoading && state.course == null) {
-      body = const Center(child: CircularProgressIndicator());
+      body = const Center(child: NooLoader());
     } else if (state.error != null) {
       body = Center(
         child: NooErrorView(

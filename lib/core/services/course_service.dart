@@ -8,26 +8,31 @@ class CourseService {
   CourseService({ApiClient? client}) : _client = client ?? ApiClient();
 
   // Fetch course assignments for a specific student
-  Future<ApiResponse<List<CourseAssignmentEntity>>> getStudentCourseAssignments(
+  Future<ApiResponse<CourseAssignmentEntity>> getStudentCourseAssignments(
     String studentId, {
     bool isArchived = false,
+    int? page,
+    int? limit,
   }) async {
-    final queryParams = QueryParams.empty().addBoolFilter(
+    var queryParams = QueryParams.empty().addBoolFilter(
       "isArchived",
       isArchived,
     );
 
-    final resp = await _client.get<List<CourseAssignmentEntity>>(
+    if (page != null) {
+      queryParams = queryParams.addPage(page);
+    }
+    if (limit != null) {
+      queryParams = queryParams.addLimit(limit);
+    }
+
+    final resp = await _client.get<CourseAssignmentEntity>(
       path: '/course/student/$studentId',
       queryParams: queryParams,
-      fromJson: (json) => (json as List)
-          .map(
-            (e) => CourseAssignmentEntity.fromJson(
-              (e as Map).cast<String, dynamic>(),
-            ),
-          )
-          .toList(),
-      isList: false,
+      fromJson: (json) => CourseAssignmentEntity.fromJson(
+        (json as Map).cast<String, dynamic>(),
+      ),
+      isList: true,
     );
     return resp;
   }

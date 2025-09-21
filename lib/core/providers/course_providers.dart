@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/entities/course.dart';
 import 'package:mobile_2/core/providers/api_client_provider.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
@@ -18,22 +19,41 @@ class CourseAssignmentsState {
   final List<CourseAssignmentEntity> assignments;
   final bool isLoading;
   final String? error;
+  final int currentPage;
+  final int? totalItems;
+  final int itemsPerPage;
 
   const CourseAssignmentsState({
     this.assignments = const [],
     this.isLoading = false,
     this.error,
+    this.currentPage = 1,
+    this.totalItems,
+    this.itemsPerPage = 20,
   });
+
+  int? get totalPages =>
+      totalItems != null ? (totalItems! / itemsPerPage).ceil() : null;
+
+  bool get hasNextPage => totalPages != null && currentPage < totalPages!;
+
+  bool get hasPreviousPage => currentPage > 1;
 
   CourseAssignmentsState copyWith({
     List<CourseAssignmentEntity>? assignments,
     bool? isLoading,
     String? error,
+    int? currentPage,
+    int? totalItems,
+    int? itemsPerPage,
   }) {
     return CourseAssignmentsState(
       assignments: assignments ?? this.assignments,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
+      currentPage: currentPage ?? this.currentPage,
+      totalItems: totalItems ?? this.totalItems,
+      itemsPerPage: itemsPerPage ?? this.itemsPerPage,
     );
   }
 }
@@ -58,8 +78,9 @@ class CourseAssignmentsNotifier extends StateNotifier<CourseAssignmentsState> {
     }
   }
 
-  Future<void> loadAssignments({bool? isArchived}) async {
+  Future<void> loadAssignments({bool? isArchived, int? page}) async {
     if (!mounted) return;
+    final targetPage = page ?? 1;
     state = state.copyWith(isLoading: true, error: null);
     try {
       if (_studentId.isEmpty) {
@@ -67,23 +88,26 @@ class CourseAssignmentsNotifier extends StateNotifier<CourseAssignmentsState> {
         await this.ref.read(authStateProvider.notifier).logout();
         return;
       }
-      final result =
-          await ApiResponseHandler.handleCall<List<CourseAssignmentEntity>>(
-            () async {
-              return _courseService.getStudentCourseAssignments(
-                _studentId,
-                isArchived: isArchived ?? _isArchived,
-              );
-            },
-          );
+      final response = await _courseService.getStudentCourseAssignments(
+        _studentId,
+        isArchived: isArchived ?? _isArchived,
+        page: targetPage,
+        limit: state.itemsPerPage,
+      );
+
       if (!mounted) return;
-      if (result.isSuccess && result.data != null) {
-        state = state.copyWith(assignments: result.data!, isLoading: false);
-      } else {
+
+      if (response is ApiListResponse<CourseAssignmentEntity>) {
         state = state.copyWith(
-          error: result.error ?? 'Неизвестная ошибка',
+          assignments: response.data,
           isLoading: false,
+          currentPage: targetPage,
+          totalItems: response.total,
         );
+      } else if (response is ApiErrorResponse) {
+        state = state.copyWith(error: response.error, isLoading: false);
+      } else {
+        state = state.copyWith(error: 'Неизвестная ошибка', isLoading: false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -92,7 +116,25 @@ class CourseAssignmentsNotifier extends StateNotifier<CourseAssignmentsState> {
   }
 
   Future<void> refreshAssignments({bool? isArchived}) async {
-    await loadAssignments(isArchived: isArchived);
+    await loadAssignments(isArchived: isArchived, page: 1);
+  }
+
+  Future<void> loadNextPage() async {
+    if (state.hasNextPage) {
+      await loadAssignments(page: state.currentPage + 1);
+    }
+  }
+
+  Future<void> loadPreviousPage() async {
+    if (state.hasPreviousPage) {
+      await loadAssignments(page: state.currentPage - 1);
+    }
+  }
+
+  Future<void> goToPage(int page) async {
+    if (page >= 1 && (state.totalPages == null || page <= state.totalPages!)) {
+      await loadAssignments(page: page);
+    }
   }
 }
 
