@@ -103,16 +103,27 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
     final works = worksState.works;
 
     if (works.isEmpty) {
-      return NooEmptyList(
-        title: 'Нет работ',
-        message: 'В этом разделе нет пока работ.',
-        child: tab == AssignedWorkTab.all
-            ? const Text(
-                'Чтобы получить работы, перейдите в курс и нажмите "К работе" в нужном материале.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
-              )
-            : null,
+      return RefreshIndicator(
+        onRefresh: () => worksNotifier.refreshWorks(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height:
+                MediaQuery.of(context).size.height -
+                200, // Account for tab bar and app bar
+            child: NooEmptyList(
+              title: 'Нет работ',
+              message: 'В этом разделе нет пока работ.',
+              child: tab == AssignedWorkTab.all
+                  ? const Text(
+                      'Чтобы получить работы, перейдите в курс и нажмите "К работе" в нужном материале.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14),
+                    )
+                  : null,
+            ),
+          ),
+        ),
       );
     }
 

@@ -49,6 +49,15 @@ class AssignedWorkService {
     return resp;
   }
 
+  Future<ApiResponse<AssignedWorkEntity>> getAssignedWork(String workId) async {
+    final resp = await _client.get<AssignedWorkEntity>(
+      path: '/assigned-work/$workId',
+      fromJson: (json) =>
+          AssignedWorkEntity.fromJson((json as Map).cast<String, dynamic>()),
+    );
+    return resp;
+  }
+
   // Archive assigned work
   Future<ApiResponse<void>> archiveAssignedWork(String workId) async {
     final resp = await _client.patch<void>(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
+import 'package:mobile_2/core/utils/date_helpers.dart';
 
 /// A reusable widget that groups a list of items by date and displays them
 /// with date headers.
@@ -138,21 +139,7 @@ class NooGroupedListByDate<T> extends StatelessWidget {
   }
 
   String _defaultDateFormatter(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final workDate = DateTime(date.year, date.month, date.day);
-
-    if (workDate == today) {
-      return 'Сегодня';
-    } else if (workDate == today.subtract(const Duration(days: 1))) {
-      return 'Вчера';
-    } else if (workDate.isAfter(today.subtract(const Duration(days: 7)))) {
-      return DateFormat('EEEE', 'ru').format(date); // Day of the week
-    } else if (workDate.year == today.year) {
-      return DateFormat('d MMMM', 'ru').format(date); // e.g., 5 марта
-    } else {
-      return DateFormat('d MMMM yyyy', 'ru').format(date); // e.g., 5 марта 2022
-    }
+    return formatRelativeDate(date);
   }
 }
 

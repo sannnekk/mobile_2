@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
+import 'package:mobile_2/widgets/shared/noo_status_tags.dart';
+import 'package:mobile_2/widgets/shared/noo_score_widget.dart';
+import 'package:mobile_2/core/utils/date_helpers.dart';
 
 typedef AssignedWorkAction = ({
   String label,
@@ -35,19 +37,9 @@ class AssignedWorkCard extends StatelessWidget {
         const SizedBox(height: 8),
 
         // Statuses row
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            _buildStatusChip(
-              _getSolveStatusText(work.solveStatus),
-              _getSolveStatusColor(work.solveStatus),
-            ),
-            _buildStatusChip(
-              _getCheckStatusText(work.checkStatus),
-              _getCheckStatusColor(work.checkStatus),
-            ),
-          ],
+        NooStatusTags(
+          solveStatus: work.solveStatus,
+          checkStatus: work.checkStatus,
         ),
 
         const SizedBox(height: 8),
@@ -69,7 +61,7 @@ class AssignedWorkCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Решить до ${_formatDate(work.solveDeadlineAt!)}',
+                      'Решить до ${formatDate(work.solveDeadlineAt!)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -86,7 +78,7 @@ class AssignedWorkCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Проверка до ${_formatDate(work.checkDeadlineAt!)}',
+                      'Проверка до ${formatDate(work.checkDeadlineAt!)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -98,46 +90,7 @@ class AssignedWorkCard extends StatelessWidget {
         ],
 
         // Score display
-        if (work.score != null) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(
-                '${work.score}/${work.maxScore}',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: work.score! / work.maxScore),
-            duration: const Duration(seconds: 2),
-            builder: (context, value, child) {
-              return Container(
-                height: 4,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: value,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+        NooScoreWidget(score: work.score, maxScore: work.maxScore),
       ],
     );
 
@@ -149,85 +102,6 @@ class AssignedWorkCard extends StatelessWidget {
         child: NooCard(child: cardContent),
       ),
     );
-  }
-
-  Widget _buildStatusChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
-  String _getSolveStatusText(AssignedWorkSolveStatus status) {
-    switch (status) {
-      case AssignedWorkSolveStatus.notStarted:
-        return 'Не решена';
-      case AssignedWorkSolveStatus.inProgress:
-        return 'В процессе';
-      case AssignedWorkSolveStatus.madeInDeadline:
-        return 'Решена в дедлайн';
-      case AssignedWorkSolveStatus.madeAfterDeadline:
-        return 'Решена после дедлайна';
-    }
-  }
-
-  String _getCheckStatusText(AssignedWorkCheckStatus status) {
-    switch (status) {
-      case AssignedWorkCheckStatus.notChecked:
-        return 'Не проверена';
-      case AssignedWorkCheckStatus.inProgress:
-        return 'Проверяется';
-      case AssignedWorkCheckStatus.checkedInDeadline:
-        return 'Проверена в дедлайн';
-      case AssignedWorkCheckStatus.checkedAfterDeadline:
-        return 'Проверена после дедлайна';
-      case AssignedWorkCheckStatus.checkedAutomatically:
-        return 'Проверена автоматически';
-    }
-  }
-
-  Color _getSolveStatusColor(AssignedWorkSolveStatus status) {
-    switch (status) {
-      case AssignedWorkSolveStatus.notStarted:
-        return Colors.grey;
-      case AssignedWorkSolveStatus.inProgress:
-        return Colors.orange;
-      case AssignedWorkSolveStatus.madeInDeadline:
-        return Colors.green;
-      case AssignedWorkSolveStatus.madeAfterDeadline:
-        return Colors.red;
-    }
-  }
-
-  Color _getCheckStatusColor(AssignedWorkCheckStatus status) {
-    switch (status) {
-      case AssignedWorkCheckStatus.notChecked:
-        return Colors.grey;
-      case AssignedWorkCheckStatus.inProgress:
-        return Colors.blue;
-      case AssignedWorkCheckStatus.checkedInDeadline:
-        return Colors.green;
-      case AssignedWorkCheckStatus.checkedAfterDeadline:
-        return Colors.red;
-      case AssignedWorkCheckStatus.checkedAutomatically:
-        return Colors.purple;
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('dd.MM.yyyy', 'ru').format(date);
   }
 
   void _showActionsMenu(BuildContext context) {

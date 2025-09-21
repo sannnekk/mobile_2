@@ -90,7 +90,10 @@ class AssignedWorksNotifier extends StateNotifier<AssignedWorksState> {
     try {
       if (_studentId.isEmpty) {
         if (!mounted) return;
-        state = state.copyWith(error: 'User not authenticated', isLoading: false);
+        state = state.copyWith(
+          error: 'User not authenticated',
+          isLoading: false,
+        );
         return;
       }
 
@@ -241,3 +244,15 @@ final assignedWorksNotifierProvider =
         ),
       );
     });
+
+@riverpod
+Future<AssignedWorkEntity> assignedWorkDetail(Ref ref, String workId) async {
+  final service = await ref.watch(assignedWorkServiceProvider.future);
+  final response = await service.getAssignedWork(workId);
+  final result = ApiResponseHandler.handle(response);
+  if (result.isSuccess) {
+    return result.data!;
+  } else {
+    throw Exception(result.error ?? 'Не удалось загрузить работу');
+  }
+}
