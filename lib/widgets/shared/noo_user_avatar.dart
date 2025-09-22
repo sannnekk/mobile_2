@@ -18,17 +18,9 @@ class NooUserAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    print('NooUserAvatar: Building with avatar: ${avatar != null}');
-
     // For now, use a simple implementation
     // TODO: Integrate with UserAvatarEntity when available
     if (avatar != null) {
-      print('NooUserAvatar: avatarType: ${avatar!.avatarType}');
-      if (avatar!.avatarType == AvatarType.telegram) {
-        print('NooUserAvatar: telegram URL: ${avatar!.telegramAvatarUrl}');
-      } else if (avatar!.avatarType == AvatarType.custom) {
-        print('NooUserAvatar: media: ${avatar!.media?.src}');
-      }
       if (avatar!.avatarType == AvatarType.telegram &&
           avatar!.telegramAvatarUrl.isNotEmpty) {
         return CircleAvatar(

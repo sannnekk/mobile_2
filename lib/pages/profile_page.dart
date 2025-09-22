@@ -2,12 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
+import 'package:mobile_2/core/providers/statistics_providers.dart';
 import 'package:mobile_2/widgets/shared/noo_app_scaffold.dart';
+import 'package:mobile_2/widgets/shared/noo_text.dart';
+import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_user_avatar.dart';
 import 'package:mobile_2/widgets/shared/noo_user_info_card.dart';
 import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
+import 'package:mobile_2/widgets/shared/noo_error_view.dart';
+import 'package:mobile_2/widgets/shared/noo_select_input.dart';
+import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
 import 'package:mobile_2/core/entities/user.dart';
+import 'package:mobile_2/core/entities/statistics.dart';
+import 'package:mobile_2/core/utils/debouncer.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -19,17 +29,47 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late DateTime _fromDate;
+  late DateTime _toDate;
+  WorkType? _selectedWorkType;
+  late Debouncer _debouncer;
+  late StatisticsRequest _currentRequest;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initializeDefaultDates();
+    _debouncer = Debouncer(delay: const Duration(milliseconds: 500));
+    _currentRequest = StatisticsRequest(
+      from: _fromDate,
+      to: _toDate,
+      type: _selectedWorkType,
+    );
     _fetchUserData();
+  }
+
+  void _initializeDefaultDates() {
+    final now = DateTime.now();
+    final currentDay = now.day;
+
+    if (currentDay >= 18) {
+      // If it's 18th or later, from = 17th of this month, to = today
+      _fromDate = DateTime(now.year, now.month, 17);
+      _toDate = now;
+    } else {
+      // If it's 17th or earlier, from = 17th of previous month, to = today
+      final previousMonth = now.month == 1 ? 12 : now.month - 1;
+      final previousYear = now.month == 1 ? now.year - 1 : now.year;
+      _fromDate = DateTime(previousYear, previousMonth, 17);
+      _toDate = now;
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _debouncer.dispose();
     super.dispose();
   }
 
@@ -96,51 +136,484 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           },
         ),
       ],
-      child: Column(
-        children: [
-          // Profile header
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                // Huge avatar
-                NooUserAvatar(user: user, avatar: user.avatar, radius: 80),
-                const SizedBox(height: 24),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile header
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // Huge avatar
+                  NooUserAvatar(user: user, avatar: user.avatar, radius: 80),
+                  const SizedBox(height: 24),
 
-                // User info
-                NooUserInfoCard(user: user),
-              ],
+                  // User info
+                  NooUserInfoCard(user: user),
+                ],
+              ),
             ),
-          ),
 
-          // Tabs
-          NooTabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Статистика'),
-              Tab(text: 'Мои кураторы'),
-              Tab(text: 'Мои опросы'),
-            ],
-          ),
-
-          // Tab content
-          Expanded(
-            child: TabBarView(
+            // Tabs
+            NooTabBar(
               controller: _tabController,
-              children: [
-                _buildStatisticsTab(),
-                _buildMentorsTab(),
-                _buildPollsTab(),
+              tabs: const [
+                Tab(text: 'Статистика'),
+                Tab(text: 'Мои кураторы'),
+                Tab(text: 'Мои опросы'),
               ],
             ),
-          ),
-        ],
+
+            // Tab content
+            SizedBox(
+              height: 2000, // Give plenty of height for content
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildStatisticsTab(),
+                  _buildMentorsTab(),
+                  _buildPollsTab(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatisticsTab() {
-    return const Center(child: Text('Статистика - в разработке'));
+    final authState = ref.watch(authStateProvider);
+    final user = authState.user!;
+
+    final statisticsAsync = ref.watch(
+      userStatisticsProvider(user.username, _currentRequest),
+    );
+
+    return Column(
+      children: [
+        // Filters section
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDatePicker(
+                      label: 'От',
+                      selectedDate: _fromDate,
+                      onDateSelected: _onFromDateChanged,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildDatePicker(
+                      label: 'До',
+                      selectedDate: _toDate,
+                      onDateSelected: _onToDateChanged,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildWorkTypeDropdown(),
+            ],
+          ),
+        ),
+
+        // Statistics content
+        statisticsAsync.when(
+          data: (statistics) => _buildStatisticsContent(statistics),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, stack) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: NooErrorView(
+              error: 'Ошибка загрузки статистики: $error',
+              onRetry: () => ref.refresh(
+                userStatisticsProvider(user.username, _currentRequest),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatisticsContent(Statistics statistics) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: statistics.sections.asMap().entries.map((entry) {
+          final index = entry.key;
+          final section = entry.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Section header
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    NooTextTitle(section.name),
+                    if (section.description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      NooText(section.description),
+                    ],
+                  ],
+                ),
+              ),
+
+              // Section entries
+              ...section.entries.map((entry) => _buildStatisticsEntry(entry)),
+
+              // Section plots
+              ...section.plots.map((plot) => _buildStatisticsPlot(plot)),
+
+              if (index < statistics.sections.length - 1)
+                const Divider(height: 32),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildStatisticsEntry(StatisticsEntry entry) {
+    return NooCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: NooTextTitle(entry.name, size: NooTitleSize.small),
+              ),
+              NooTextTitle(entry.value.toString(), size: NooTitleSize.small),
+              if (entry.percentage != null) ...[
+                const SizedBox(width: 8),
+                NooText(
+                  '(${entry.percentage!.toStringAsFixed(1)}%)',
+                  dimmed: true,
+                ),
+              ],
+            ],
+          ),
+          if (entry.description != null && entry.description!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            NooText(entry.description!),
+          ],
+          if (entry.subEntries != null && entry.subEntries!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...entry.subEntries!.map(
+              (subEntry) => Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    NooText('• ${subEntry.name}'),
+                    const Spacer(),
+                    NooText(subEntry.value.toString()),
+                    if (subEntry.percentage != null) ...[
+                      const SizedBox(width: 8),
+                      NooText(
+                        '(${subEntry.percentage!.toStringAsFixed(1)}%)',
+                        dimmed: true,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsPlot(dynamic plotData) {
+    if (plotData is Plot) {
+      return _buildSinglePlot(plotData);
+    } else if (plotData is List) {
+      return Column(
+        children: plotData
+            .map((plot) => _buildSinglePlot(plot as Plot))
+            .toList(),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildSinglePlot(Plot plot) {
+    final spots = plot.data.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.value.toDouble());
+    }).toList();
+
+    final color = _getPlotColor(plot.color);
+
+    return NooCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            plot.name,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 16),
+          if (spots.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Text(
+                  'Нет данных для отображения',
+                  style: TextStyle(
+                    fontStyle: FontStyle.italic,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 16, 22, 26),
+              child: SizedBox(
+                height: 200,
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 40,
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: plot.data.length > 10
+                              ? (plot.data.length / 5).ceil().toDouble()
+                              : 1,
+                          reservedSize:
+                              80, // Increased further for rotated text
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index >= 0 && index < plot.data.length) {
+                              // Show fewer labels if there are many data points
+                              final shouldShowLabel =
+                                  plot.data.length <= 10 ||
+                                  index %
+                                          (plot.data.length > 10
+                                              ? (plot.data.length / 5).ceil()
+                                              : 1) ==
+                                      0;
+
+                              if (shouldShowLabel) {
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    0,
+                                    8,
+                                    0,
+                                    0,
+                                  ),
+                                  child: Transform.rotate(
+                                    angle:
+                                        -0.5, // Rotate text slightly for better fit
+                                    child: Text(
+                                      plot.data[index].key,
+                                      style: const TextStyle(fontSize: 10),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    borderData: FlBorderData(
+                      border: Border(
+                        left: BorderSide(color: Theme.of(context).dividerColor),
+                        bottom: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                      ),
+                    ),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        color: color,
+                        barWidth: 3,
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: color.withOpacity(0.1),
+                        ),
+                        dotData: FlDotData(show: true),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Color _getPlotColor(PlotColor color) {
+    switch (color) {
+      case PlotColor.primary:
+        return Theme.of(context).primaryColor;
+      case PlotColor.secondary:
+        return Theme.of(context).colorScheme.secondary;
+      case PlotColor.success:
+        return Colors.green;
+      case PlotColor.danger:
+        return Colors.red;
+      case PlotColor.warning:
+        return Colors.orange;
+      case PlotColor.info:
+        return Colors.blue;
+      case PlotColor.light:
+        return Colors.grey[300]!;
+      case PlotColor.dark:
+        return Colors.grey[800]!;
+    }
+  }
+
+  void _onFromDateChanged(DateTime date) {
+    setState(() {
+      _fromDate = date;
+      _updateCurrentRequest();
+    });
+  }
+
+  void _onToDateChanged(DateTime date) {
+    setState(() {
+      _toDate = date;
+      _updateCurrentRequest();
+    });
+  }
+
+  void _onWorkTypeChanged(WorkType? workType) {
+    setState(() {
+      _selectedWorkType = workType;
+      _updateCurrentRequest();
+    });
+  }
+
+  void _updateCurrentRequest() {
+    _currentRequest = StatisticsRequest(
+      from: _fromDate,
+      to: _toDate,
+      type: _selectedWorkType,
+    );
+  }
+
+  Widget _buildDatePicker({
+    required String label,
+    required DateTime selectedDate,
+    required Function(DateTime) onDateSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 4),
+        InkWell(
+          onTap: () async {
+            final pickedDate = await showDatePicker(
+              context: context,
+              initialDate: selectedDate,
+              firstDate: DateTime(2020),
+              lastDate: DateTime.now(),
+            );
+            if (pickedDate != null) {
+              onDateSelected(pickedDate);
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  DateFormat('dd.MM.yyyy').format(selectedDate),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.calendar_today,
+                  size: 20,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWorkTypeDropdown() {
+    return NooSelectInput<WorkType?>(
+      label: 'Тип работы',
+      hint: 'Все типы',
+      value: _selectedWorkType,
+      items: [
+        const DropdownMenuItem<WorkType?>(value: null, child: Text('Все типы')),
+        ...WorkType.values.map((type) {
+          return DropdownMenuItem<WorkType?>(
+            value: type,
+            child: Text(_getWorkTypeDisplayName(type)),
+          );
+        }),
+      ],
+      onChanged: _onWorkTypeChanged,
+    );
+  }
+
+  String _getWorkTypeDisplayName(WorkType type) {
+    switch (type) {
+      case WorkType.test:
+        return 'Тест';
+      case WorkType.miniTest:
+        return 'Мини-тест';
+      case WorkType.phrase:
+        return 'Фраза';
+      case WorkType.secondPart:
+        return 'Вторая часть';
+      case WorkType.trialWork:
+        return 'Пробная работа';
+    }
   }
 
   Widget _buildMentorsTab() {
