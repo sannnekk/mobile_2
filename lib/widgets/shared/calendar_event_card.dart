@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/entities/calendar.dart';
 import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/core/utils/date_helpers.dart';
 import 'package:mobile_2/styles/colors.dart';
+import 'package:mobile_2/core/providers/calendar_providers.dart';
+import 'package:mobile_2/core/services/calendar_service.dart';
 
-class CalendarEventCard extends StatelessWidget {
+class CalendarEventCard extends ConsumerWidget {
   final CalendarEventEntity event;
 
   const CalendarEventCard({super.key, required this.event});
@@ -25,14 +30,23 @@ class CalendarEventCard extends StatelessWidget {
     }
   }
 
+  String? _extractUlidFromUrl(String url) {
+    final ulidRegex = RegExp(r'[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}');
+    final match = ulidRegex.firstMatch(url);
+    return match?.group(0);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return NooCard(
       onTap: event.url != null
           ? () {
-              // TODO: Handle URL opening
+              final ulid = _extractUlidFromUrl(event.url!);
+              if (ulid != null) {
+                context.go('/assigned_work/$ulid');
+              }
             }
           : null,
       child: Row(
@@ -84,6 +98,27 @@ class CalendarEventCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (event.type == CalendarEventType.event) ...[
+                      TextButton(
+                        onPressed: () => _deleteEvent(context, ref),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          foregroundColor: AppColors.danger,
+                        ),
+                        child: const Text(
+                          'Удалить',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
 
@@ -133,6 +168,60 @@ class CalendarEventCard extends StatelessWidget {
         return 'Работа выполнена';
       case CalendarEventType.event:
         return 'Событие';
+    }
+  }
+
+  Future<void> _deleteEvent(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить событие'),
+        content: const Text('Вы уверены, что хотите удалить это событие?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final service = CalendarService();
+        final response = await service.deleteEvent(event.id);
+
+        if (response is ApiEmptyResponse) {
+          // Refresh calendar events
+          ref
+              .read(calendarEventsProvider.notifier)
+              .loadEventsForMonth(
+                ref.read(calendarEventsProvider).focusedMonth,
+              );
+          if (context.mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Событие удалено')));
+          }
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Ошибка при удалении события')),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+        }
+      }
     }
   }
 }

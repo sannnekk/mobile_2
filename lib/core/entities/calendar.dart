@@ -24,6 +24,7 @@ enum CalendarEventType {
 class CalendarEventEntity extends ApiEntity {
   final String title;
   final String description;
+  @JsonKey(fromJson: _dateFromJson)
   final DateTime date;
   final CalendarEventVisibility visibility;
   @JsonKey(fromJson: eventTypeFromJson, toJson: eventTypeToJson)
@@ -48,6 +49,16 @@ class CalendarEventEntity extends ApiEntity {
       _$CalendarEventEntityFromJson(json);
 
   Map<String, dynamic> toJson() => _$CalendarEventEntityToJson(this);
+
+  static DateTime _dateFromJson(String dateString) {
+    final utcDate = DateTime.parse(dateString);
+    // If the parsed date is in UTC (has 'Z' suffix or +00:00), convert to local
+    if (dateString.endsWith('Z') || dateString.contains('+00:00')) {
+      return utcDate.toLocal();
+    }
+    // Otherwise, assume it's already in local time
+    return utcDate;
+  }
 
   static String eventTypeToJson(CalendarEventType type) => enumToString(type);
 

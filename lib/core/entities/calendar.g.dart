@@ -15,7 +15,7 @@ CalendarEventEntity _$CalendarEventEntityFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['updatedAt'] as String),
       title: json['title'] as String,
       description: json['description'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: CalendarEventEntity._dateFromJson(json['date'] as String),
       visibility: $enumDecode(
         _$CalendarEventVisibilityEnumMap,
         json['visibility'],

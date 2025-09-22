@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_2/widgets/shared/noo_app_scaffold.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:mobile_2/core/providers/calendar_providers.dart';
 import 'package:mobile_2/widgets/shared/calendar_event_card.dart';
@@ -9,6 +10,7 @@ import 'package:mobile_2/widgets/shared/noo_error_view.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_2/core/entities/calendar.dart';
 import 'package:mobile_2/styles/colors.dart';
+import 'package:mobile_2/widgets/calendar/create_event_dialog.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -51,6 +53,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return colors;
   }
 
+  void _showCreateEventDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          CreateEventDialog(selectedDate: _selectedDay ?? DateTime.now()),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -65,130 +75,142 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   Widget build(BuildContext context) {
     final calendarState = ref.watch(calendarEventsProvider);
 
-    return Column(
-      children: [
-        // Calendar widget
-        TableCalendar(
-          firstDay: DateTime.utc(2020, 1, 1),
-          lastDay: DateTime.utc(2030, 12, 31),
-          focusedDay: _focusedDay,
-          calendarFormat: _calendarFormat,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          locale: 'ru_RU',
-          selectedDayPredicate: (day) {
-            return isSameDay(_selectedDay, day);
-          },
-          eventLoader: (day) {
-            return calendarState.events.where((event) {
-              return isSameDay(event.date, day);
-            }).toList();
-          },
-          calendarBuilders: CalendarBuilders(
-            defaultBuilder: (context, day, focusedDay) {
-              final colors = _getUniqueEventColorsForDay(
-                day,
-                calendarState.events,
-              );
-              final isSelected = isSameDay(_selectedDay, day);
-              final isToday = isSameDay(day, DateTime.now());
-
-              return Container(
-                margin: const EdgeInsets.all(4.0),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : isToday
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
-                      : null,
-                  shape: BoxShape.circle,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      '${day.day}',
-                      style: TextStyle(
-                        color: isSelected || isToday
-                            ? Theme.of(context).colorScheme.onSecondary
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    if (colors.isNotEmpty)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: colors
-                            .take(4)
-                            .map(
-                              (color) => Container(
-                                width: 4,
-                                height: 4,
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 1,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                  ],
-                ),
-              );
+    return NooAppScaffold(
+      title: "Календарь",
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: () => _showCreateEventDialog(context),
+          tooltip: 'Создать событие',
+        ),
+      ],
+      child: Column(
+        children: [
+          // Calendar widget
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            locale: 'ru_RU',
+            selectedDayPredicate: (day) {
+              return isSameDay(_selectedDay, day);
             },
-          ),
-          onDaySelected: (selectedDay, focusedDay) {
-            if (!isSameDay(_selectedDay, selectedDay)) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-              ref.read(calendarEventsProvider.notifier).selectDate(selectedDay);
-            }
-          },
-          onFormatChanged: (format) {
-            if (_calendarFormat != format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            }
-          },
-          onPageChanged: (focusedDay) {
-            _focusedDay = focusedDay;
-            ref.read(calendarEventsProvider.notifier).changeMonth(focusedDay);
-          },
-          calendarStyle: CalendarStyle(
-            todayDecoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
+            eventLoader: (day) {
+              return calendarState.events.where((event) {
+                return isSameDay(event.date, day);
+              }).toList();
+            },
+            calendarBuilders: CalendarBuilders(
+              defaultBuilder: (context, day, focusedDay) {
+                final colors = _getUniqueEventColorsForDay(
+                  day,
+                  calendarState.events,
+                );
+                final isSelected = isSameDay(_selectedDay, day);
+                final isToday = isSameDay(day, DateTime.now());
+
+                return Container(
+                  margin: const EdgeInsets.all(4.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : isToday
+                        ? Theme.of(context).colorScheme.primary.withOpacity(0.3)
+                        : null,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${day.day}',
+                        style: TextStyle(
+                          color: isSelected || isToday
+                              ? Theme.of(context).colorScheme.onSecondary
+                              : Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      if (colors.isNotEmpty)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: colors
+                              .take(4)
+                              .map(
+                                (color) => Container(
+                                  width: 4,
+                                  height: 4,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            onDaySelected: (selectedDay, focusedDay) {
+              if (!isSameDay(_selectedDay, selectedDay)) {
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+                ref
+                    .read(calendarEventsProvider.notifier)
+                    .selectDate(selectedDay);
+              }
+            },
+            onFormatChanged: (format) {
+              if (_calendarFormat != format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              }
+            },
+            onPageChanged: (focusedDay) {
+              _focusedDay = focusedDay;
+              ref.read(calendarEventsProvider.notifier).changeMonth(focusedDay);
+            },
+            calendarStyle: CalendarStyle(
+              todayDecoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.secondary,
+                  width: 1,
+                ),
+              ),
+              selectedDecoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.secondary,
-                width: 1,
+                shape: BoxShape.circle,
+              ),
+              markerDecoration: const BoxDecoration(
+                color: Colors.transparent,
+                shape: BoxShape.circle,
               ),
             ),
-            selectedDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondary,
-              shape: BoxShape.circle,
-            ),
-            markerDecoration: const BoxDecoration(
-              color: Colors.transparent,
-              shape: BoxShape.circle,
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextFormatter: (date, locale) =>
+                  DateFormat.yMMMM('ru').format(date),
             ),
           ),
-          headerStyle: HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-            titleTextFormatter: (date, locale) =>
-                DateFormat.yMMMM('ru').format(date),
-          ),
-        ),
 
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Events list for selected day
-        Expanded(child: _buildEventsList(calendarState)),
-      ],
+          // Events list for selected day
+          Expanded(child: _buildEventsList(calendarState)),
+        ],
+      ),
     );
   }
 

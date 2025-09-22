@@ -155,8 +155,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/calendar',
-        builder: (context, state) =>
-            const NooAppScaffold(title: 'Календарь', child: CalendarPage()),
+        builder: (context, state) => const CalendarPage(),
       ),
       GoRoute(
         path: '/profile',
