@@ -84,6 +84,18 @@ class AuthService {
     return resp;
   }
 
+  Future<ApiResponse<List<MentorAssignmentEntity>>> getStudentMentorAssignments(
+    String username,
+  ) async {
+    final resp = await _client.get<List<MentorAssignmentEntity>>(
+      path: '/user/$username',
+      fromJson: (json) => UserEntity.fromJson(
+        (json as Map).cast<String, dynamic>(),
+      ).mentorAssignmentsAsStudent,
+    );
+    return resp;
+  }
+
   Future<ApiResponse<String>> getServerVersion() async {
     final resp = await _client.get<String>(
       path: '/platform/version',

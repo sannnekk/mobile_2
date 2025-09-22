@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/providers/statistics_providers.dart';
+import 'package:mobile_2/core/providers/mentor_providers.dart';
 import 'package:mobile_2/widgets/shared/noo_app_scaffold.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
@@ -12,6 +13,8 @@ import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
 import 'package:mobile_2/widgets/shared/noo_select_input.dart';
 import 'package:mobile_2/widgets/shared/noo_card.dart';
+import 'package:mobile_2/widgets/shared/noo_mentor_assignment_card.dart';
+import 'package:mobile_2/widgets/shared/noo_empty_list.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
 import 'package:mobile_2/core/entities/user.dart';
 import 'package:mobile_2/core/entities/statistics.dart';
@@ -166,7 +169,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
             // Tab content
             SizedBox(
-              height: 2000, // Give plenty of height for content
+              height: 1200,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -617,7 +620,50 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   Widget _buildMentorsTab() {
-    return const Center(child: Text('Мои кураторы - в разработке'));
+    final authState = ref.watch(authStateProvider);
+    final user = authState.user!;
+
+    final mentorAssignmentsAsync = ref.watch(
+      userMentorAssignmentsProvider(user.username),
+    );
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        // ignore: unused_result
+        ref.refresh(userMentorAssignmentsProvider(user.username));
+      },
+      child: mentorAssignmentsAsync.when(
+        data: (assignments) {
+          if (assignments.isEmpty) {
+            return const NooEmptyList(
+              title: 'Нет кураторов',
+              message: 'У вас пока нет назначенных кураторов',
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: assignments.length,
+            itemBuilder: (context, index) {
+              final assignment = assignments[index];
+              return NooMentorAssignmentCard(assignment: assignment);
+            },
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(16),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, stack) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: NooErrorView(
+            error: 'Ошибка загрузки кураторов: $error',
+            onRetry: () =>
+                ref.refresh(userMentorAssignmentsProvider(user.username)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildPollsTab() {

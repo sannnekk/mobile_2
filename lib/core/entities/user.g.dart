@@ -24,6 +24,20 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => UserEntity(
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
+  mentorAssignmentsAsStudent:
+      (json['mentorAssignmentsAsStudent'] as List<dynamic>?)
+          ?.map(
+            (e) => MentorAssignmentEntity.fromJson(e as Map<String, dynamic>),
+          )
+          .toList() ??
+      const [],
+  mentorAssignmentsAsMentor:
+      (json['mentorAssignmentsAsMentor'] as List<dynamic>?)
+          ?.map(
+            (e) => MentorAssignmentEntity.fromJson(e as Map<String, dynamic>),
+          )
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
@@ -40,6 +54,8 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'telegramNotificationsEnabled': instance.telegramNotificationsEnabled,
       'isBlocked': instance.isBlocked,
       'avatar': instance.avatar,
+      'mentorAssignmentsAsStudent': instance.mentorAssignmentsAsStudent,
+      'mentorAssignmentsAsMentor': instance.mentorAssignmentsAsMentor,
     };
 
 UserAvatarEntity _$UserAvatarEntityFromJson(Map<String, dynamic> json) =>
@@ -73,15 +89,15 @@ MentorAssignmentEntity _$MentorAssignmentEntityFromJson(
 ) => MentorAssignmentEntity(
   id: json['id'] as String,
   createdAt: DateTime.parse(json['createdAt'] as String),
-  mentorId: json['mentorId'] as String,
+  mentorId: json['mentorId'] as String?,
   mentor: json['mentor'] == null
       ? null
       : UserEntity.fromJson(json['mentor'] as Map<String, dynamic>),
-  studentId: json['studentId'] as String,
+  studentId: json['studentId'] as String?,
   student: json['student'] == null
       ? null
       : UserEntity.fromJson(json['student'] as Map<String, dynamic>),
-  subjectId: json['subjectId'] as String,
+  subjectId: json['subjectId'] as String?,
   subject: json['subject'] == null
       ? null
       : SubjectEntity.fromJson(json['subject'] as Map<String, dynamic>),

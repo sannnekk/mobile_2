@@ -22,6 +22,8 @@ class UserEntity extends ApiEntity {
   final bool telegramNotificationsEnabled;
   final bool isBlocked;
   final UserAvatarEntity? avatar;
+  final List<MentorAssignmentEntity> mentorAssignmentsAsStudent;
+  final List<MentorAssignmentEntity> mentorAssignmentsAsMentor;
 
   UserEntity({
     required super.id,
@@ -36,6 +38,8 @@ class UserEntity extends ApiEntity {
     this.isBlocked = false,
     this.avatar,
     super.updatedAt,
+    this.mentorAssignmentsAsStudent = const [],
+    this.mentorAssignmentsAsMentor = const [],
   });
 
   factory UserEntity.fromJson(Map<String, dynamic> json) =>
@@ -81,21 +85,21 @@ class UserAvatarEntity extends ApiEntity {
 
 @JsonSerializable()
 class MentorAssignmentEntity extends ApiEntity {
-  final String mentorId;
+  final String? mentorId;
   final UserEntity? mentor;
-  final String studentId;
+  final String? studentId;
   final UserEntity? student;
-  final String subjectId;
+  final String? subjectId;
   final SubjectEntity? subject;
 
   MentorAssignmentEntity({
     required super.id,
     required super.createdAt,
-    required this.mentorId,
+    this.mentorId,
     this.mentor,
-    required this.studentId,
+    this.studentId,
     this.student,
-    required this.subjectId,
+    this.subjectId,
     this.subject,
     super.updatedAt,
   });
