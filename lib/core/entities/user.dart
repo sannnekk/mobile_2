@@ -21,6 +21,7 @@ class UserEntity extends ApiEntity {
   final String? telegramId;
   final bool telegramNotificationsEnabled;
   final bool isBlocked;
+  final UserAvatarEntity? avatar;
 
   UserEntity({
     required super.id,
@@ -33,6 +34,7 @@ class UserEntity extends ApiEntity {
     this.telegramId,
     this.telegramNotificationsEnabled = false,
     this.isBlocked = false,
+    this.avatar,
     super.updatedAt,
   });
 

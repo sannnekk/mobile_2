@@ -165,7 +165,6 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
         fit: StackFit.expand,
         children: [
           body,
-          NooLoader(),
           // Only show the sheet when not initially loading
           if (!(state.isLoading && state.course == null))
             DraggableBottomSheet(

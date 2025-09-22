@@ -149,6 +149,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true);
     await _checkAuthStatus();
   }
+
+  Future<void> updateUser(UserEntity user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+    state = state.copyWith(user: user);
+  }
 }
 
 final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>(

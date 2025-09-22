@@ -18,6 +18,9 @@ UserEntity _$UserEntityFromJson(Map<String, dynamic> json) => UserEntity(
   telegramNotificationsEnabled:
       json['telegramNotificationsEnabled'] as bool? ?? false,
   isBlocked: json['isBlocked'] as bool? ?? false,
+  avatar: json['avatar'] == null
+      ? null
+      : UserAvatarEntity.fromJson(json['avatar'] as Map<String, dynamic>),
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
@@ -36,6 +39,7 @@ Map<String, dynamic> _$UserEntityToJson(UserEntity instance) =>
       'telegramId': instance.telegramId,
       'telegramNotificationsEnabled': instance.telegramNotificationsEnabled,
       'isBlocked': instance.isBlocked,
+      'avatar': instance.avatar,
     };
 
 UserAvatarEntity _$UserAvatarEntityFromJson(Map<String, dynamic> json) =>

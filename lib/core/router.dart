@@ -94,8 +94,16 @@ class ProfileRoute extends GoRouteData {
   const ProfileRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) =>
-      const NooAppScaffold(title: 'Профиль', child: ProfilePage());
+  Widget build(BuildContext context, GoRouterState state) => NooAppScaffold(
+    title: 'Профиль',
+    child: const ProfilePage(),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.settings),
+        onPressed: () => GoRouter.of(context).go('/settings'),
+      ),
+    ],
+  );
 }
 
 // Global key for router access
@@ -159,8 +167,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) =>
-            const NooAppScaffold(title: 'Профиль', child: ProfilePage()),
+        builder: (context, state) => const ProfilePage(),
       ),
     ],
     redirect: (context, state) {
