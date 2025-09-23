@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_json_viewer/flutter_json_viewer.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/types/richtext.dart' as rt;
 import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_editor.dart';
+import 'package:mobile_2/widgets/shared/noo_task_criteria.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_input.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
+import 'package:mobile_2/widgets/shared/noo_word_counter.dart';
 
 enum AssignedWorkMode { read, solve, check }
 
@@ -34,6 +35,10 @@ class NooAssignedWorkTask extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final taskSolved =
+        ((answer?.isSubmitted == true && comment?.score != null) ||
+        mode == AssignedWorkMode.read);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -61,37 +66,47 @@ class NooAssignedWorkTask extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Input field
-          if (mode == AssignedWorkMode.solve ||
-              mode == AssignedWorkMode.read) ...[
-            if (task.type == WorkTaskType.word) ...[
-              NooTextInput(
-                label: "Ваш ответ",
-                initialValue: answer?.word,
-                enabled: mode == AssignedWorkMode.solve,
-                onChanged: mode == AssignedWorkMode.solve
-                    ? (value) => onAnswerChanged?.call(task.id, value, null)
-                    : null,
-              ),
-            ] else ...[
-              NooRichTextEditor(
-                initialRichText: answer?.content,
-                readOnly: mode == AssignedWorkMode.read,
-                onChanged: mode == AssignedWorkMode.solve
-                    ? (value) => onAnswerChanged?.call(task.id, null, value)
-                    : null,
-              ),
-            ],
-            const SizedBox(height: 24),
+          if (task.type == WorkTaskType.word) ...[
+            NooTextInput(
+              label: "Ваш ответ",
+              initialValue: answer?.word,
+              enabled: mode == AssignedWorkMode.solve,
+              onChanged: mode == AssignedWorkMode.solve
+                  ? (value) => onAnswerChanged?.call(task.id, value, null)
+                  : null,
+            ),
+          ] else ...[
+            mode == AssignedWorkMode.solve
+                ? NooRichTextEditor(
+                    initialRichText: answer?.content,
+                    onChanged: (value) =>
+                        onAnswerChanged?.call(task.id, null, value),
+                  )
+                : NooRichTextDisplay(
+                    richText: answer?.content ?? rt.RichText.empty(),
+                    padding: const EdgeInsets.all(0),
+                  ),
+          ],
+          const SizedBox(height: 24),
+
+          if (task.type == WorkTaskType.essay ||
+              task.type == WorkTaskType.finalEssay) ...[
+            NooWordCounter(
+              richText: answer?.content ?? rt.RichText.empty(),
+              maxCount: task.maxWordCount,
+              minCount: task.minWordCount,
+            ),
           ],
 
           // Right answer and score (if submitted and scored)
-          if (answer?.isSubmitted == true && comment?.score != null) ...[
+          if (taskSolved) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                NooText('Правильный ответ:'),
-                const SizedBox(height: 8),
-                if (task.rightAnswer != null) ...[
+                if (task.rightAnswer != null &&
+                    task.rightAnswer!.isNotEmpty) ...[
+                  NooText('Правильный ответ:'),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
@@ -119,7 +134,7 @@ class NooAssignedWorkTask extends StatelessWidget {
                 const SizedBox(height: 16),
                 Builder(
                   builder: (context) {
-                    final score = comment!.score!;
+                    final score = comment?.score ?? 0;
                     final highestScore = task.highestScore;
                     final scoreText = '${score.toInt()}/$highestScore';
 
@@ -150,9 +165,20 @@ class NooAssignedWorkTask extends StatelessWidget {
             const SizedBox(height: 24),
           ],
 
+          if (task.type == WorkTaskType.essay ||
+              task.type == WorkTaskType.finalEssay ||
+              task.type == WorkTaskType.dictation) ...[
+            NooTextTitle('Критерии оценивания:', size: NooTitleSize.small),
+            const SizedBox(height: 8),
+            NooTaskCriteria(
+              taskType: task.type,
+              detailedScore: comment?.detailedScore,
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Comment content (if submitted and scored)
-          if (answer?.isSubmitted == true &&
-              comment?.score != null &&
+          if (taskSolved &&
               comment?.content != null &&
               !comment!.content!.isEmpty()) ...[
             Column(
@@ -160,7 +186,10 @@ class NooAssignedWorkTask extends StatelessWidget {
               children: [
                 NooTextTitle('Комментарий куратора:'),
                 const SizedBox(height: 8),
-                NooRichTextDisplay(richText: comment!.content!),
+                NooRichTextDisplay(
+                  richText: comment!.content!,
+                  padding: const EdgeInsets.all(0),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -185,8 +214,7 @@ class NooAssignedWorkTask extends StatelessWidget {
           ],
 
           // Check hint (if submitted and scored)
-          if (answer?.isSubmitted == true &&
-              comment?.score != null &&
+          if (taskSolved &&
               task.checkHint != null &&
               !task.checkHint!.isEmpty()) ...[
             Column(

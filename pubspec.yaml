@@ -56,6 +56,7 @@ dependencies:
   riverpod_annotation: ^2.6.1
   share_plus: ^10.0.2
   flutter_json_viewer: ^1.0.1
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   flutter_test:

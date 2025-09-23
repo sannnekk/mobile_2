@@ -90,6 +90,28 @@ class WorkTaskEntity extends ApiEntity {
   factory WorkTaskEntity.fromJson(Map<String, dynamic> json) =>
       _$WorkTaskEntityFromJson(json);
 
+  get maxWordCount {
+    switch (type) {
+      case WorkTaskType.essay:
+        return 1000;
+      case WorkTaskType.finalEssay:
+        return 1500;
+      default:
+        return 0;
+    }
+  }
+
+  get minWordCount {
+    switch (type) {
+      case WorkTaskType.essay:
+        return 150;
+      case WorkTaskType.finalEssay:
+        return 250;
+      default:
+        return 0;
+    }
+  }
+
   Map<String, dynamic> toJson() => _$WorkTaskEntityToJson(this);
 
   static WorkTaskType workTaskTypeFromJson(String json) =>

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_2/app_config.dart';
 import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/providers/media_providers.dart';
+import '../embeds/noo_image_embed_builder.dart';
+import '../embeds/noo_video_embed_builder.dart';
 import '../../core/types/richtext.dart' as rt;
 
 class NooRichTextEditor extends ConsumerStatefulWidget {
-  // TODO: Add toolbar support using QuillToolbar.simple when available
   final rt.RichText? initialRichText;
   final Function(rt.RichText)? onChanged;
   final TextStyle? textStyle;
@@ -133,6 +133,9 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.format_bold),
+                      style: ButtonStyle(
+                        fixedSize: WidgetStateProperty.all(const Size(20, 20)),
+                      ),
                       onPressed: () =>
                           _controller.formatSelection(Attribute.bold),
                     ),
@@ -147,9 +150,14 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
                           _controller.formatSelection(Attribute.underline),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.format_list_bulleted),
+                      icon: const Icon(Icons.subscript),
                       onPressed: () =>
-                          _controller.formatSelection(Attribute.ul),
+                          _controller.formatSelection(Attribute.subscript),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.superscript),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.superscript),
                     ),
                     IconButton(
                       icon: const Icon(Icons.format_list_numbered),
@@ -191,14 +199,14 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
                                 value: _ImageAction.pick,
                                 child: ListTile(
                                   leading: Icon(Icons.photo_library),
-                                  title: Text('Choose image'),
+                                  title: Text('Выбрать изображение'),
                                 ),
                               ),
                               const PopupMenuItem(
                                 value: _ImageAction.capture,
                                 child: ListTile(
                                   leading: Icon(Icons.photo_camera),
-                                  title: Text('Take photo'),
+                                  title: Text('Сделать снимок'),
                                 ),
                               ),
                             ],
@@ -216,7 +224,10 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
               focusNode: _focusNode,
               config: QuillEditorConfig(
                 minHeight: 200,
-                embedBuilders: FlutterQuillEmbeds.editorBuilders(),
+                embedBuilders: [
+                  const NooImageEmbedBuilder(),
+                  const NooVideoEmbedBuilder(),
+                ],
               ),
             ),
           ),
@@ -265,11 +276,11 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
       } else if (resp is ApiErrorResponse) {
         _showSnack(resp.error);
       } else {
-        _showSnack('Unknown response while uploading image');
+        _showSnack('Ошибка при загрузке изображения');
       }
     } catch (e) {
       if (!mounted) return;
-      _showSnack('Failed to pick/upload image: $e');
+      _showSnack('Ошибка при выборе/загрузке изображения');
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }

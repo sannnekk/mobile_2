@@ -119,4 +119,8 @@ class RichText {
     });
     return filtered.isEmpty ? null : filtered;
   }
+
+  static RichText empty() {
+    return RichText._(Delta()..insert('\n'));
+  }
 }
