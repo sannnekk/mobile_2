@@ -46,12 +46,6 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
       _loadTab(_tabController.index);
-      setState(() {
-        // Hide search when leaving the All tab
-        if (_tabController.index != 0 && _showSearch) {
-          _showSearch = false;
-        }
-      });
     }
   }
 
@@ -65,27 +59,30 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
 
   @override
   Widget build(BuildContext context) {
-    final actions = <Widget>[];
-    if (_tabController.index == 0) {
-      actions.add(
+    return NooAppScaffold(
+      title: 'Работы',
+      actions: [
         IconButton(
           icon: const Icon(Icons.search),
           tooltip: 'Поиск',
           onPressed: () {
             setState(() {
+              if (!_showSearch) {
+                final currentTab = AssignedWorkTab.values[_tabController.index];
+                final state = ref.read(
+                  assignedWorksNotifierProvider(currentTab),
+                );
+                // Prefill controller with existing tab query
+                _searchController.text = state.searchQuery;
+              }
               _showSearch = !_showSearch;
             });
           },
         ),
-      );
-    }
-
-    return NooAppScaffold(
-      title: 'Работы',
-      actions: actions,
+      ],
       child: Column(
         children: [
-          if (_tabController.index == 0) _buildSearchBar(),
+          _buildSearchBar(),
           NooTabBar(
             controller: _tabController,
             tabs: const [
@@ -115,8 +112,9 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
   }
 
   Widget _buildSearchBar() {
+    final currentTab = AssignedWorkTab.values[_tabController.index];
     final notifier = ref.read(
-      assignedWorksNotifierProvider(AssignedWorkTab.all).notifier,
+      assignedWorksNotifierProvider(currentTab).notifier,
     );
     final theme = Theme.of(context);
     if (!_showSearch) {
@@ -143,14 +141,6 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
                     setState(() {});
                   },
                 ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    _showSearch = false;
-                  });
-                },
-              ),
             ],
           ),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

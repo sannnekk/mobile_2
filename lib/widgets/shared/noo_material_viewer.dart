@@ -7,11 +7,13 @@ import 'package:mobile_2/core/entities/poll.dart';
 import 'package:mobile_2/core/entities/video.dart';
 import 'package:mobile_2/core/providers/assigned_work_providers.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
-import 'package:mobile_2/core/utils/string_utils.dart';
 import 'package:mobile_2/widgets/shared/noo_button.dart';
+import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_file_card.dart';
+import 'package:mobile_2/widgets/shared/noo_score_widget.dart';
 import 'package:mobile_2/widgets/shared/noo_reaction_widget.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
+import 'package:mobile_2/widgets/shared/noo_status_tags.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 
@@ -51,6 +53,8 @@ class _MaterialViewerState extends ConsumerState<MaterialViewer> {
           if (widget.material.workId != null) ...[
             const SizedBox(height: 8),
             _buildToWorkButton(),
+            const SizedBox(height: 8),
+            _buildWorkProgressBlock(widget.material.workId!),
           ],
           const SizedBox(height: 12),
           if (widget.material.description != null &&
@@ -142,6 +146,46 @@ class _MaterialViewerState extends ConsumerState<MaterialViewer> {
     } finally {
       if (mounted) setState(() => _isCreatingWork = false);
     }
+  }
+
+  Widget _buildWorkProgressBlock(String workId) {
+    final progressAsync = ref.watch(assignedWorkProgressProvider(workId));
+    return progressAsync.when(
+      data: (progress) {
+        return NooCard(
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const NooText('Прогресс по работе'),
+                  const SizedBox(height: 8),
+                  NooStatusTags(
+                    solveStatus: progress.solveStatus,
+                    checkStatus: progress.checkStatus,
+                  ),
+                  const SizedBox(height: 8),
+                  NooScoreWidget(
+                    score: progress.score,
+                    maxScore: progress.maxScore,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(minHeight: 2),
+      ),
+      error: (e, st) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: NooText('Работа не начата', dimmed: true),
+      ),
+    );
   }
 
   Widget _buildBreadcrumbs(BuildContext context, List<String> path) {

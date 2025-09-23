@@ -141,4 +141,16 @@ class AssignedWorkService {
     );
     return resp;
   }
+
+  // Get progress for work by workId (material's work id)
+  Future<ApiResponse<AssignedWorkProgress>> getAssignedWorkProgressByWorkId(
+    String workId,
+  ) async {
+    final resp = await _client.get<AssignedWorkProgress>(
+      path: '/assigned-work/progress/$workId',
+      fromJson: (json) =>
+          AssignedWorkProgress.fromJson((json as Map).cast<String, dynamic>()),
+    );
+    return resp;
+  }
 }

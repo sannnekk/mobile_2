@@ -17,6 +17,18 @@ Future<AssignedWorkService> assignedWorkService(Ref ref) async {
   return AssignedWorkService(client: client);
 }
 
+final assignedWorkProgressProvider = FutureProvider.autoDispose
+    .family<AssignedWorkProgress, String>((ref, workId) async {
+      final service = await ref.watch(assignedWorkServiceProvider.future);
+      final response = await service.getAssignedWorkProgressByWorkId(workId);
+      final result = ApiResponseHandler.handle(response);
+      if (result.isSuccess) {
+        return result.data!;
+      } else {
+        throw Exception(result.error ?? 'Не удалось загрузить прогресс');
+      }
+    });
+
 enum AssignedWorkTab { all, unsolved, unchecked, checked, archived }
 
 class AssignedWorksState {
