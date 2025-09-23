@@ -183,7 +183,6 @@ class _NooAssignedWorkTaskNavigationSheetState
             return InkWell(
               onTap: () {
                 widget.onTaskSelected(index);
-                Navigator.of(context).pop();
               },
               child: Container(
                 decoration: BoxDecoration(

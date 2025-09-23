@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_json_viewer/flutter_json_viewer.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/types/richtext.dart' as rt;
@@ -152,7 +153,8 @@ class NooAssignedWorkTask extends StatelessWidget {
           // Comment content (if submitted and scored)
           if (answer?.isSubmitted == true &&
               comment?.score != null &&
-              comment?.content != null) ...[
+              comment?.content != null &&
+              !comment!.content!.isEmpty()) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -165,14 +167,17 @@ class NooAssignedWorkTask extends StatelessWidget {
           ],
 
           // Solve hint
-          if (task.solveHint != null) ...[
+          if (task.solveHint != null && !task.solveHint!.isEmpty()) ...[
             NooCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   NooTextTitle('Подсказка:'),
                   const SizedBox(height: 8),
-                  NooRichTextDisplay(richText: task.solveHint!, padding: const EdgeInsets.all(0)),
+                  NooRichTextDisplay(
+                    richText: task.solveHint!,
+                    padding: const EdgeInsets.all(0),
+                  ),
                 ],
               ),
             ),
@@ -182,16 +187,22 @@ class NooAssignedWorkTask extends StatelessWidget {
           // Check hint (if submitted and scored)
           if (answer?.isSubmitted == true &&
               comment?.score != null &&
-              task.checkHint != null) ...[
+              task.checkHint != null &&
+              !task.checkHint!.isEmpty()) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 NooTextTitle('Пояснение:'),
                 const SizedBox(height: 8),
-                NooRichTextDisplay(richText: task.checkHint!, padding: const EdgeInsets.all(0)),
+                NooRichTextDisplay(
+                  richText: task.checkHint!,
+                  padding: const EdgeInsets.all(0),
+                ),
               ],
             ),
           ],
+
+          const SizedBox(height: 150),
         ],
       ),
     );

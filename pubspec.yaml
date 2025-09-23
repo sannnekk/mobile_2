@@ -54,6 +54,7 @@ dependencies:
   logger: ^2.4.0
   riverpod_annotation: ^2.6.1
   share_plus: ^10.0.2
+  flutter_json_viewer: ^1.0.1
 
 dev_dependencies:
   flutter_test:

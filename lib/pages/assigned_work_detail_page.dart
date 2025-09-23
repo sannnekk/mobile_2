@@ -77,6 +77,11 @@ class _AssignedWorkDetailPageState
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+    Future(() => _sheetController.animateTo(
+      0.1,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    ));
   }
 
   void _onPageChanged(int index) {

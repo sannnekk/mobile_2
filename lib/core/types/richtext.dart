@@ -19,13 +19,19 @@ class RichText {
     return {'ops': _delta.toJson()};
   }
 
-  Delta get delta => _delta;
+  Delta get delta {
+    if (!(_delta.last.data as String).endsWith('\n')) {
+      _delta.insert('\n');
+    }
+
+    return _delta;
+  }
 
   factory RichText.fromDelta(Delta delta) {
     return RichText._(delta);
   }
 
   bool isEmpty() {
-    return _delta.isEmpty;
+    return _delta.isEmpty || (_delta.length == 1 && _delta.first.data == '\n');
   }
 }
