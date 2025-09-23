@@ -172,6 +172,23 @@ class AssignedWorkEntity extends ApiEntity {
 
   factory AssignedWorkEntity.fromJson(Map<String, dynamic> json) =>
       _$AssignedWorkEntityFromJson(json);
+
+  get isChecked =>
+      checkStatus == AssignedWorkCheckStatus.checkedInDeadline ||
+      checkStatus == AssignedWorkCheckStatus.checkedAfterDeadline ||
+      checkStatus == AssignedWorkCheckStatus.checkedAutomatically;
+
+  get isMade =>
+      solveStatus == AssignedWorkSolveStatus.madeAfterDeadline ||
+      solveStatus == AssignedWorkSolveStatus.madeInDeadline;
+
+  get isRemakeable => work?.type == WorkType.test && isChecked;
+
+  get deadlineShifteable =>
+      solveDeadlineAt != null &&
+      DateTime.now().isBefore(solveDeadlineAt!) &&
+      !isMade;
+
   Map<String, dynamic> toJson() => _$AssignedWorkEntityToJson(this);
 
   static String _solveStatusToString(AssignedWorkSolveStatus status) =>

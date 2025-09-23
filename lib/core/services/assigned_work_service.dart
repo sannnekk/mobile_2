@@ -114,4 +114,26 @@ class AssignedWorkService {
     );
     return resp;
   }
+
+  // Shift deadline for assigned work
+  Future<ApiResponse<void>> shiftDeadline(String assignedWorkId) async {
+    final resp = await _client.patch<void>(
+      path: '/assigned-work/$assignedWorkId/shift-deadline',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
+
+  // Remake assigned work
+  Future<ApiResponse<void>> remakeAssignedWork(
+    String assignedWorkId, {
+    required bool onlyFalse,
+  }) async {
+    final resp = await _client.patch<void>(
+      path: '/assigned-work/$assignedWorkId/remake',
+      body: {'onlyFalse': onlyFalse},
+      acceptEmpty: true,
+    );
+    return resp;
+  }
 }

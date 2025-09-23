@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/providers/assigned_work_providers.dart';
+import 'package:mobile_2/core/services/assigned_work_service.dart';
+import 'package:mobile_2/core/utils/api_response_handler.dart';
 import 'package:mobile_2/styles/colors.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_task.dart';
+import 'package:mobile_2/widgets/shared/noo_button.dart';
+import 'package:mobile_2/widgets/shared/noo_loader.dart';
 import 'package:mobile_2/widgets/shared/noo_subject.dart';
 import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_status_tags.dart';
 import 'package:mobile_2/widgets/shared/noo_score_widget.dart';
+import 'package:mobile_2/widgets/shared/noo_user_info_card.dart';
 import 'package:mobile_2/core/utils/date_helpers.dart';
 
 class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
@@ -18,6 +23,7 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   final int currentTaskIndex;
   final Function(int) onTaskSelected;
   final ScrollController? scrollController;
+  final VoidCallback? onWorkUpdated;
 
   const NooAssignedWorkTaskNavigationSheet({
     super.key,
@@ -26,6 +32,7 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
     required this.currentTaskIndex,
     required this.onTaskSelected,
     this.scrollController,
+    this.onWorkUpdated,
   });
 
   @override
@@ -37,6 +44,8 @@ class _NooAssignedWorkTaskNavigationSheetState
     extends State<NooAssignedWorkTaskNavigationSheet>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  bool _isShiftingDeadline = false;
+  bool _isRemakingWork = false;
 
   @override
   void initState() {
@@ -110,6 +119,166 @@ class _NooAssignedWorkTaskNavigationSheetState
 
     // Default: no special color
     return theme.dividerColor;
+  }
+
+  Future<void> _showShiftDeadlineDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Сдвинуть дедлайн'),
+        content: const Text(
+          'Вы действительно хотите сдвинуть дедлайн на 3 дня?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+            child: const Text('Сдвинуть'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _shiftDeadline(context);
+    }
+  }
+
+  Future<void> _showRemakeWorkDialog(BuildContext context) async {
+    bool onlyFalse = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Переделать работу'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Вы действительно хотите переделывать работу?'),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                title: const Text(
+                  'Переделать только неправильно решенные задания',
+                ),
+                value: onlyFalse,
+                onChanged: (value) {
+                  setState(() {
+                    onlyFalse = value ?? false;
+                  });
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Отмена'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+              child: const Text('Переделать'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true) {
+      await _remakeWork(context, onlyFalse);
+    }
+  }
+
+  Future<void> _shiftDeadline(BuildContext context) async {
+    if (widget.assignedWork == null) return;
+
+    setState(() {
+      _isShiftingDeadline = true;
+    });
+
+    try {
+      final service = AssignedWorkService();
+      final response = await service.shiftDeadline(widget.assignedWork!.id);
+
+      if (ApiResponseHandler.handle(response).isSuccess) {
+        // Update local deadline - parent component should refresh the data
+        widget.onWorkUpdated?.call();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Дедлайн успешно сдвинут')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Не удалось сдвинуть дедлайн')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Произошла ошибка при сдвиге дедлайна')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isShiftingDeadline = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _remakeWork(BuildContext context, bool onlyFalse) async {
+    if (widget.assignedWork == null) return;
+
+    setState(() {
+      _isRemakingWork = true;
+    });
+
+    try {
+      final service = AssignedWorkService();
+      final response = await service.remakeAssignedWork(
+        widget.assignedWork!.id,
+        onlyFalse: onlyFalse,
+      );
+
+      if (ApiResponseHandler.handle(response).isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Новая работа появилась в списке')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Не удалось переделать работу')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Произошла ошибка, не удалось переделать работу'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRemakingWork = false;
+        });
+      }
+    }
   }
 
   @override
@@ -249,27 +418,72 @@ class _NooAssignedWorkTaskNavigationSheetState
           ),
           const SizedBox(height: 8),
           if (widget.assignedWork?.solvedAt != null) ...[
-            NooText('Решена: ${formatDate(widget.assignedWork!.solvedAt!)}'),
+            NooText(
+              'Решена: ${formatDate(widget.assignedWork!.solvedAt!)}',
+              dimmed: true,
+            ),
           ],
           if (widget.assignedWork?.solveDeadlineAt != null) ...[
             NooText(
               'Дедлайн решения: ${formatDate(widget.assignedWork!.solveDeadlineAt!)}',
+              dimmed: true,
             ),
           ],
           if (widget.assignedWork?.checkedAt != null) ...[
             NooText(
               'Проверена: ${formatDate(widget.assignedWork!.checkedAt!)}',
+              dimmed: true,
             ),
           ],
           if (widget.assignedWork?.checkDeadlineAt != null) ...[
             NooText(
               'Дедлайн проверки: ${formatDate(widget.assignedWork!.checkDeadlineAt!)}',
+              dimmed: true,
             ),
           ],
           const SizedBox(height: 8),
           NooScoreWidget(
             score: widget.assignedWork?.score,
             maxScore: widget.assignedWork?.maxScore ?? 0,
+          ),
+          if (widget.assignedWork?.mentors != null &&
+              widget.assignedWork!.mentors!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            NooText('Проверяющие кураторы'),
+            const SizedBox(height: 8),
+            ...widget.assignedWork!.mentors!.map(
+              (mentor) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: NooUserInfoCard(user: mentor, compact: true),
+              ),
+            ),
+          ],
+          if (widget.assignedWork?.isRemakeable) ...[
+            _isRemakingWork
+                ? const NooLoader()
+                : NooButton(
+                    label: 'Переделать работу',
+                    onPressed: () {
+                      _showRemakeWorkDialog(context);
+                    },
+                    style: NooButtonStyle.secondary,
+                  ),
+          ],
+          if (widget.assignedWork?.deadlineShifteable) ...[
+            _isShiftingDeadline
+                ? const NooLoader()
+                : NooButton(
+                    label: 'Сдвинуть дедлайн',
+                    onPressed: () {
+                      _showShiftDeadlineDialog(context);
+                    },
+                    style: NooButtonStyle.secondary,
+                  ),
+          ],
+          const SizedBox(height: 12),
+          const NooText(
+            'Сохранение работы происходит автоматически, если есть интернет-соединение.',
+            dimmed: true,
           ),
         ],
       ),

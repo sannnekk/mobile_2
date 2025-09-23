@@ -180,6 +180,7 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
                           )
                         : PopupMenuButton<_ImageAction>(
                             icon: const Icon(Icons.image),
+                            color: Theme.of(context).cardColor,
                             onSelected: (action) async {
                               switch (action) {
                                 case _ImageAction.pick:

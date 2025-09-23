@@ -297,6 +297,9 @@ class _AssignedWorkDetailPageState
               currentTaskIndex: _currentTaskIndex,
               onTaskSelected: _onTaskSelected,
               scrollController: scrollController,
+              onWorkUpdated: () {
+                ref.invalidate(assignedWorkDetailProvider(widget.workId));
+              },
             );
           },
         ),
