@@ -32,9 +32,15 @@ class NooRichTextDisplay extends StatelessWidget {
         scrollController: scrollController ?? ScrollController(),
         focusNode: FocusNode(),
         config: QuillEditorConfig(
+          showCursor: false,
           embedBuilders: FlutterQuillEmbeds.editorBuilders(),
-          customStyleBuilder: (attribute) =>
-              textStyle ?? const TextStyle(height: 1.8),
+          customStyleBuilder: (attribute) {
+            final baseStyle = textStyle ?? const TextStyle(height: 1.8);
+            if (attribute.key == 'link') {
+              return baseStyle.copyWith(decoration: TextDecoration.none);
+            }
+            return baseStyle;
+          },
         ),
       ),
     );

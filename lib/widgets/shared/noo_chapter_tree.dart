@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile_2/core/entities/course.dart';
 
 class ChapterTree extends StatefulWidget {
@@ -412,6 +413,20 @@ class _MaterialTile extends StatelessWidget {
         //color: isSelected ? theme.colorScheme.secondary : null,
         child: Row(
           children: [
+            if (material.workId != null) ...[
+              SvgPicture.asset(
+                'assets/icons/uni-hat.svg',
+                width: 16,
+                height: 16,
+                colorFilter: ColorFilter.mode(
+                  isSelected
+                      ? theme.colorScheme.secondary
+                      : theme.colorScheme.onSurface.withOpacity(0.6),
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             //Icon(Icons.article, size: 16, color: theme.colorScheme.onSecondary),
             //const SizedBox(width: 12),
             Expanded(

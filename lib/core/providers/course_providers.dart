@@ -321,6 +321,7 @@ class CourseDetailNotifier extends StateNotifier<CourseDetailState> {
         if (material.id == materialId) {
           return CourseMaterialEntity(
             id: material.id,
+            slug: material.slug,
             createdAt: material.createdAt,
             updatedAt: material.updatedAt,
             name: material.name,

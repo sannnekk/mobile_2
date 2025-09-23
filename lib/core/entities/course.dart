@@ -80,6 +80,7 @@ class CourseChapterEntity extends ApiEntity {
 
 @JsonSerializable()
 class CourseMaterialEntity extends ApiEntity {
+  final String slug;
   final String name;
   final String? description;
   @RichTextConverter()
@@ -104,6 +105,7 @@ class CourseMaterialEntity extends ApiEntity {
   CourseMaterialEntity({
     required super.id,
     required super.createdAt,
+    required this.slug,
     super.updatedAt,
     required this.name,
     this.description,

@@ -114,6 +114,7 @@ CourseMaterialEntity _$CourseMaterialEntityFromJson(
 ) => CourseMaterialEntity(
   id: json['id'] as String,
   createdAt: DateTime.parse(json['createdAt'] as String),
+  slug: json['slug'] as String,
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
@@ -164,6 +165,7 @@ Map<String, dynamic> _$CourseMaterialEntityToJson(
   'id': instance.id,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
+  'slug': instance.slug,
   'name': instance.name,
   'description': instance.description,
   'content': const RichTextConverter().toJson(instance.content),

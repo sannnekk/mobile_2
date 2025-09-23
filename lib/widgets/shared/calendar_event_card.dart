@@ -6,6 +6,7 @@ import 'package:mobile_2/core/entities/calendar.dart';
 import 'package:mobile_2/widgets/shared/noo_card.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/core/utils/date_helpers.dart';
+import 'package:mobile_2/core/utils/string_utils.dart';
 import 'package:mobile_2/styles/colors.dart';
 import 'package:mobile_2/core/providers/calendar_providers.dart';
 import 'package:mobile_2/core/services/calendar_service.dart';
@@ -30,12 +31,6 @@ class CalendarEventCard extends ConsumerWidget {
     }
   }
 
-  String? _extractUlidFromUrl(String url) {
-    final ulidRegex = RegExp(r'[0123456789ABCDEFGHJKMNPQRSTVWXYZ]{26}');
-    final match = ulidRegex.firstMatch(url);
-    return match?.group(0);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -43,7 +38,7 @@ class CalendarEventCard extends ConsumerWidget {
     return NooCard(
       onTap: event.url != null
           ? () {
-              final ulid = _extractUlidFromUrl(event.url!);
+              final ulid = extractUlid(event.url!);
               if (ulid != null) {
                 context.go('/assigned_work/$ulid');
               }

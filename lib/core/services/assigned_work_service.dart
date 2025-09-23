@@ -2,6 +2,7 @@ import 'package:mobile_2/core/api/api_client.dart';
 import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/api/query_params.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
+import 'package:mobile_2/core/utils/string_utils.dart';
 
 class AssignedWorkService {
   final ApiClient _client;
@@ -98,6 +99,18 @@ class AssignedWorkService {
       path: '/assigned-work/$assignedWorkId/solve',
       body: {'answers': answers.map((a) => a.toJson()).toList()},
       acceptEmpty: true,
+    );
+    return resp;
+  }
+
+  // Create assigned work from material
+  Future<ApiResponse<String?>> createAssignedWorkFromMaterial(
+    String materialSlug,
+  ) async {
+    final resp = await _client.post<String?>(
+      path: '/assigned-work/$materialSlug',
+      fromJson: (json) =>
+          extractUlid((json as Map).cast<String, dynamic>()['link']),
     );
     return resp;
   }

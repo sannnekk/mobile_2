@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/entities/course.dart';
 import 'package:mobile_2/core/entities/media.dart';
 import 'package:mobile_2/core/entities/poll.dart';
 import 'package:mobile_2/core/entities/video.dart';
+import 'package:mobile_2/core/providers/assigned_work_providers.dart';
+import 'package:mobile_2/core/utils/api_response_handler.dart';
+import 'package:mobile_2/core/utils/string_utils.dart';
+import 'package:mobile_2/widgets/shared/noo_button.dart';
 import 'package:mobile_2/widgets/shared/noo_file_card.dart';
 import 'package:mobile_2/widgets/shared/noo_reaction_widget.dart';
 import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 
-class MaterialViewer extends StatelessWidget {
+class MaterialViewer extends ConsumerStatefulWidget {
   final CourseMaterialEntity material;
   final List<String> path;
   final bool embedded;
@@ -24,53 +30,70 @@ class MaterialViewer extends StatelessWidget {
   });
 
   @override
+  ConsumerState<MaterialViewer> createState() => _MaterialViewerState();
+}
+
+class _MaterialViewerState extends ConsumerState<MaterialViewer> {
+  bool _isCreatingWork = false;
+
+  @override
   Widget build(BuildContext context) {
     final content = Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 226),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (path.isNotEmpty) ...[
-            _buildBreadcrumbs(context, path),
+          if (widget.path.isNotEmpty) ...[
+            _buildBreadcrumbs(context, widget.path),
             const SizedBox(height: 8),
           ],
-          NooTextTitle(material.name),
+          NooTextTitle(widget.material.name),
+          if (widget.material.workId != null) ...[
+            const SizedBox(height: 8),
+            _buildToWorkButton(),
+          ],
           const SizedBox(height: 12),
-          if (material.description != null &&
-              material.description!.isNotEmpty) ...[
-            NooText(material.description!),
+          if (widget.material.description != null &&
+              widget.material.description!.isNotEmpty) ...[
+            NooText(widget.material.description!),
             const SizedBox(height: 16),
           ],
-          if (material.content != null) ...[
+          if (widget.material.content != null) ...[
             NooRichTextDisplay(
-              richText: material.content!,
+              richText: widget.material.content!,
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
             ),
           ],
-          if (material.videos != null && material.videos!.isNotEmpty) ...[
-            _buildVideosSection(context, material.videos!),
+          if (widget.material.videos != null &&
+              widget.material.videos!.isNotEmpty) ...[
+            _buildVideosSection(context, widget.material.videos!),
             const SizedBox(height: 16),
           ],
-          if (material.poll != null) ...[
-            _buildPollSection(context, material.poll!),
+          if (widget.material.poll != null) ...[
+            _buildPollSection(context, widget.material.poll!),
           ],
-          if (material.files.isNotEmpty) ...[
-            _buildFilesSection(context, material.files),
+          if (widget.material.files.isNotEmpty) ...[
+            _buildFilesSection(context, widget.material.files),
             const SizedBox(height: 16),
           ],
-          if (onToggleReaction != null) ...[
+          if (widget.onToggleReaction != null) ...[
             const SizedBox(height: 24),
             ReactionWidget(
-              currentReaction: material.myReaction,
+              currentReaction: widget.material.myReaction,
               availableReactions: const ['thinking', 'check'],
-              onToggle: onToggleReaction!,
+              onToggle: widget.onToggleReaction!,
+            ),
+            const SizedBox(height: 6),
+            NooText(
+              "Реакции видны только Вам. Они помогают отслеживать прогресс.",
+              dimmed: true,
             ),
           ],
         ],
       ),
     );
 
-    if (embedded) {
+    if (widget.embedded) {
       return SingleChildScrollView(
         child: Container(
           decoration: BoxDecoration(
@@ -86,6 +109,39 @@ class MaterialViewer extends StatelessWidget {
     }
 
     return Scaffold(body: SingleChildScrollView(child: content));
+  }
+
+  Widget _buildToWorkButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: NooButton(
+        onPressed: _isCreatingWork ? null : _createAssignedWork,
+        loading: _isCreatingWork,
+        label: 'К работе',
+      ),
+    );
+  }
+
+  Future<void> _createAssignedWork() async {
+    setState(() => _isCreatingWork = true);
+    try {
+      final service = await ref.read(assignedWorkServiceProvider.future);
+      final result = await ApiResponseHandler.handleCall<String?>(
+        () => service.createAssignedWorkFromMaterial(widget.material.slug),
+      );
+      if (result.isSuccess && result.data != null) {
+        if (mounted) context.go('/assigned_work/${result.data}');
+      }
+    } catch (e) {
+      // Handle error - maybe show a snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось создать работу')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCreatingWork = false);
+    }
   }
 
   Widget _buildBreadcrumbs(BuildContext context, List<String> path) {
