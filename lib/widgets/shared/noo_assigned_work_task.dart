@@ -13,13 +13,12 @@ import 'package:mobile_2/widgets/shared/noo_word_counter.dart';
 
 enum AssignedWorkMode { read, solve, check }
 
-class NooAssignedWorkTask extends StatelessWidget {
+class NooAssignedWorkTask extends StatefulWidget {
   final WorkTaskEntity task;
   final AssignedWorkAnswerEntity? answer;
   final AssignedWorkCommentEntity? comment;
   final AssignedWorkMode mode;
-  final Function(String taskId, String? word, rt.RichText? content)?
-  onAnswerChanged;
+  final Function(String taskId, String? word, rt.RichText?)? onAnswerChanged;
   final int taskNumber;
 
   const NooAssignedWorkTask({
@@ -33,12 +32,29 @@ class NooAssignedWorkTask extends StatelessWidget {
   });
 
   @override
+  State<NooAssignedWorkTask> createState() => _NooAssignedWorkTaskState();
+}
+
+class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
+  bool _showRightAnswer = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     final taskSolved =
-        ((answer?.isSubmitted == true && comment?.score != null) ||
-        mode == AssignedWorkMode.read);
+        ((widget.answer?.isSubmitted == true &&
+            widget.comment?.score != null) ||
+        widget.mode == AssignedWorkMode.read);
+
+    final hasRightAnswer =
+        widget.task.rightAnswer != null &&
+        widget.task.rightAnswer!.trim().isNotEmpty;
+
+    final canRevealBeforeCheck =
+        widget.mode == AssignedWorkMode.solve &&
+        widget.task.isAnswerVisibleBeforeCheck &&
+        hasRightAnswer;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -50,12 +66,12 @@ class NooAssignedWorkTask extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                NooTextTitle('Задание $taskNumber'),
+                NooTextTitle('Задание ${widget.taskNumber}'),
                 const SizedBox(height: 16),
 
                 // Task content
                 NooRichTextDisplay(
-                  richText: task.content,
+                  richText: widget.task.content,
                   padding: const EdgeInsets.all(0),
                 ),
                 const SizedBox(height: 24),
@@ -66,76 +82,112 @@ class NooAssignedWorkTask extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Input field
-          if (task.type == WorkTaskType.word) ...[
+          if (widget.task.type == WorkTaskType.word) ...[
             NooTextInput(
               label: "Ваш ответ",
-              initialValue: answer?.word,
-              enabled: mode == AssignedWorkMode.solve,
-              onChanged: mode == AssignedWorkMode.solve
-                  ? (value) => onAnswerChanged?.call(task.id, value, null)
+              initialValue: widget.answer?.word,
+              enabled: widget.mode == AssignedWorkMode.solve,
+              onChanged: widget.mode == AssignedWorkMode.solve
+                  ? (value) => widget.onAnswerChanged?.call(
+                      widget.task.id,
+                      value,
+                      null,
+                    )
                   : null,
             ),
           ] else ...[
-            mode == AssignedWorkMode.solve
+            widget.mode == AssignedWorkMode.solve
                 ? NooRichTextEditor(
-                    initialRichText: answer?.content,
-                    onChanged: (value) =>
-                        onAnswerChanged?.call(task.id, null, value),
+                    initialRichText: widget.answer?.content,
+                    onChanged: (value) => widget.onAnswerChanged?.call(
+                      widget.task.id,
+                      null,
+                      value,
+                    ),
                   )
                 : NooRichTextDisplay(
-                    richText: answer?.content ?? rt.RichText.empty(),
+                    richText: widget.answer?.content ?? rt.RichText.empty(),
                     padding: const EdgeInsets.all(0),
                   ),
           ],
           const SizedBox(height: 24),
 
-          if (task.type == WorkTaskType.essay ||
-              task.type == WorkTaskType.finalEssay) ...[
+          // Toggle to reveal answer in solve mode (if allowed)
+          if (canRevealBeforeCheck) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                icon: Icon(
+                  _showRightAnswer ? Icons.visibility_off : Icons.visibility,
+                  size: 18,
+                  color: theme.colorScheme.secondary,
+                ),
+                label: NooText(
+                  _showRightAnswer ? 'Скрыть ответ' : 'Показать ответ',
+                ),
+                onPressed: () {
+                  setState(() {
+                    _showRightAnswer = !_showRightAnswer;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          if (widget.task.type == WorkTaskType.essay ||
+              widget.task.type == WorkTaskType.finalEssay) ...[
             NooWordCounter(
-              richText: answer?.content ?? rt.RichText.empty(),
-              maxCount: task.maxWordCount,
-              minCount: task.minWordCount,
+              richText: widget.answer?.content ?? rt.RichText.empty(),
+              maxCount: widget.task.maxWordCount,
+              minCount: widget.task.minWordCount,
             ),
           ],
 
-          // Right answer and score (if submitted and scored)
+          // Right answer display (if solved OR revealed in solve mode)
+          if (hasRightAnswer && (taskSolved || _showRightAnswer)) ...[
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NooText('Правильный ответ:'),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: (widget.task.rightAnswer ?? '')
+                      .split('|')
+                      .map(
+                        (answer) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: theme.dividerColor,
+                              width: 1,
+                            ),
+                          ),
+                          child: NooText(answer.trim()),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // Score (only if submitted and scored OR in read mode)
           if (taskSolved) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (task.rightAnswer != null &&
-                    task.rightAnswer!.isNotEmpty) ...[
-                  NooText('Правильный ответ:'),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: (task.rightAnswer ?? '')
-                        .split('|')
-                        .map(
-                          (answer) => Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(
-                                color: theme.dividerColor,
-                                width: 1,
-                              ),
-                            ),
-                            child: NooText(answer.trim()),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-                const SizedBox(height: 16),
                 Builder(
                   builder: (context) {
-                    final score = comment?.score ?? 0;
-                    final highestScore = task.highestScore;
+                    final score = widget.comment?.score ?? 0;
+                    final highestScore = widget.task.highestScore;
                     final scoreText = '${score.toInt()}/$highestScore';
 
                     Color scoreColor;
@@ -165,29 +217,29 @@ class NooAssignedWorkTask extends StatelessWidget {
             const SizedBox(height: 24),
           ],
 
-          if (task.type == WorkTaskType.essay ||
-              task.type == WorkTaskType.finalEssay ||
-              task.type == WorkTaskType.dictation) ...[
+          if (widget.task.type == WorkTaskType.essay ||
+              widget.task.type == WorkTaskType.finalEssay ||
+              widget.task.type == WorkTaskType.dictation) ...[
             NooTextTitle('Критерии оценивания:', size: NooTitleSize.small),
             const SizedBox(height: 8),
             NooTaskCriteria(
-              taskType: task.type,
-              detailedScore: comment?.detailedScore,
+              taskType: widget.task.type,
+              detailedScore: widget.comment?.detailedScore,
             ),
             const SizedBox(height: 16),
           ],
 
           // Comment content (if submitted and scored)
           if (taskSolved &&
-              comment?.content != null &&
-              !comment!.content!.isEmpty()) ...[
+              widget.comment?.content != null &&
+              !widget.comment!.content!.isEmpty()) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 NooTextTitle('Комментарий куратора:'),
                 const SizedBox(height: 8),
                 NooRichTextDisplay(
-                  richText: comment!.content!,
+                  richText: widget.comment!.content!,
                   padding: const EdgeInsets.all(0),
                 ),
               ],
@@ -196,7 +248,8 @@ class NooAssignedWorkTask extends StatelessWidget {
           ],
 
           // Solve hint
-          if (task.solveHint != null && !task.solveHint!.isEmpty()) ...[
+          if (widget.task.solveHint != null &&
+              !widget.task.solveHint!.isEmpty()) ...[
             NooCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +257,7 @@ class NooAssignedWorkTask extends StatelessWidget {
                   NooTextTitle('Подсказка:'),
                   const SizedBox(height: 8),
                   NooRichTextDisplay(
-                    richText: task.solveHint!,
+                    richText: widget.task.solveHint!,
                     padding: const EdgeInsets.all(0),
                   ),
                 ],
@@ -215,15 +268,15 @@ class NooAssignedWorkTask extends StatelessWidget {
 
           // Check hint (if submitted and scored)
           if (taskSolved &&
-              task.checkHint != null &&
-              !task.checkHint!.isEmpty()) ...[
+              widget.task.checkHint != null &&
+              !widget.task.checkHint!.isEmpty()) ...[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 NooTextTitle('Пояснение:'),
                 const SizedBox(height: 8),
                 NooRichTextDisplay(
-                  richText: task.checkHint!,
+                  richText: widget.task.checkHint!,
                   padding: const EdgeInsets.all(0),
                 ),
               ],
