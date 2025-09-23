@@ -27,6 +27,7 @@ class AssignedWorksState {
   final int? totalItems;
   final int itemsPerPage;
   final bool hasMorePages;
+  final String searchQuery;
 
   const AssignedWorksState({
     this.works = const [],
@@ -36,6 +37,7 @@ class AssignedWorksState {
     this.totalItems,
     this.itemsPerPage = 20,
     this.hasMorePages = false,
+    this.searchQuery = '',
   });
 
   int? get totalPages =>
@@ -54,6 +56,7 @@ class AssignedWorksState {
     int? totalItems,
     int? itemsPerPage,
     bool? hasMorePages,
+    String? searchQuery,
   }) {
     return AssignedWorksState(
       works: works ?? this.works,
@@ -63,6 +66,7 @@ class AssignedWorksState {
       totalItems: totalItems ?? this.totalItems,
       itemsPerPage: itemsPerPage ?? this.itemsPerPage,
       hasMorePages: hasMorePages ?? this.hasMorePages,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -72,6 +76,9 @@ class AssignedWorksNotifier extends StateNotifier<AssignedWorksState> {
   final String _studentId;
   final AssignedWorkTab _tab;
   final Ref ref;
+  final Debouncer _debouncer = Debouncer(
+    delay: const Duration(milliseconds: 400),
+  );
 
   AssignedWorksNotifier(
     this._service,
@@ -110,6 +117,7 @@ class AssignedWorksNotifier extends StateNotifier<AssignedWorksState> {
         checkStatuses: checkStatuses,
         page: targetPage,
         limit: state.itemsPerPage,
+        search: state.searchQuery,
       );
 
       if (!mounted) return;
@@ -131,6 +139,22 @@ class AssignedWorksNotifier extends StateNotifier<AssignedWorksState> {
       if (!mounted) return;
       state = state.copyWith(error: e.toString(), isLoading: false);
     }
+  }
+
+  void setSearchQuery(String value) {
+    final trimmed = value.trim();
+    if (state.searchQuery == trimmed) return;
+    state = state.copyWith(searchQuery: trimmed);
+    _debouncer.debounce(() {
+      // reset to first page when search changes
+      refreshWorks();
+    });
+  }
+
+  @override
+  void dispose() {
+    _debouncer.dispose();
+    super.dispose();
   }
 
   Future<void> refreshWorks() async {

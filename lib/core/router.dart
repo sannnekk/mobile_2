@@ -146,8 +146,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/assigned_works',
-        builder: (context, state) =>
-            const NooAppScaffold(title: 'Работы', child: AssignedWorksPage()),
+        builder: (context, state) => const AssignedWorksPage(),
       ),
       GoRoute(
         path: '/assigned_work/:workId',

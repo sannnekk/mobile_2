@@ -15,6 +15,7 @@ class AssignedWorkService {
     List<String>? checkStatuses,
     int? page,
     int? limit,
+    String? search,
   }) async {
     var queryParams = QueryParams.empty();
 
@@ -38,6 +39,10 @@ class AssignedWorkService {
     }
     if (limit != null) {
       queryParams = queryParams.addLimit(limit);
+    }
+
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams = queryParams.addSearch(search.trim());
     }
 
     final resp = await _client.get<AssignedWorkEntity>(
@@ -129,7 +134,7 @@ class AssignedWorkService {
     String assignedWorkId, {
     required bool onlyFalse,
   }) async {
-    final resp = await _client.patch<void>(
+    final resp = await _client.post<void>(
       path: '/assigned-work/$assignedWorkId/remake',
       body: {'onlyFalse': onlyFalse},
       acceptEmpty: true,

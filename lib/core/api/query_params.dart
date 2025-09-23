@@ -118,7 +118,7 @@ class QueryParams {
   }
 
   QueryParams addSearch(String query) {
-    return add('q', StringParam(query));
+    return add('search', StringParam(query));
   }
 
   QueryParam? get(String key) => _params[key];

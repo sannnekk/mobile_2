@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/providers/assigned_work_providers.dart';
+import 'package:mobile_2/widgets/shared/noo_app_scaffold.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_card.dart';
 import 'package:mobile_2/widgets/shared/noo_empty_list.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
@@ -21,6 +22,8 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late List<bool> _loaded;
+  final TextEditingController _searchController = TextEditingController();
+  bool _showSearch = false;
 
   @override
   void initState() {
@@ -36,12 +39,19 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
   void dispose() {
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   void _handleTabChange() {
     if (_tabController.indexIsChanging) {
       _loadTab(_tabController.index);
+      setState(() {
+        // Hide search when leaving the All tab
+        if (_tabController.index != 0 && _showSearch) {
+          _showSearch = false;
+        }
+      });
     }
   }
 
@@ -55,32 +65,99 @@ class _AssignedWorksPageState extends ConsumerState<AssignedWorksPage>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        NooTabBar(
-          controller: _tabController,
-          tabs: const [
-            Text('Все'),
-            Text('Нерешенные'),
-            Text('Непроверенные'),
-            Text('Проверенные'),
-            Text('Архив'),
-          ],
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    final actions = <Widget>[];
+    if (_tabController.index == 0) {
+      actions.add(
+        IconButton(
+          icon: const Icon(Icons.search),
+          tooltip: 'Поиск',
+          onPressed: () {
+            setState(() {
+              _showSearch = !_showSearch;
+            });
+          },
         ),
-        Expanded(
-          child: TabBarView(
+      );
+    }
+
+    return NooAppScaffold(
+      title: 'Работы',
+      actions: actions,
+      child: Column(
+        children: [
+          if (_tabController.index == 0) _buildSearchBar(),
+          NooTabBar(
             controller: _tabController,
+            tabs: const [
+              Text('Все'),
+              Text('Нерешенные'),
+              Text('Непроверенные'),
+              Text('Проверенные'),
+              Text('Архив'),
+            ],
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildWorksTab(AssignedWorkTab.all),
+                _buildWorksTab(AssignedWorkTab.unsolved),
+                _buildWorksTab(AssignedWorkTab.unchecked),
+                _buildWorksTab(AssignedWorkTab.checked),
+                _buildWorksTab(AssignedWorkTab.archived),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    final notifier = ref.read(
+      assignedWorksNotifierProvider(AssignedWorkTab.all).notifier,
+    );
+    final theme = Theme.of(context);
+    if (!_showSearch) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => notifier.setSearchQuery(value),
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'Поиск работ',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _buildWorksTab(AssignedWorkTab.all),
-              _buildWorksTab(AssignedWorkTab.unsolved),
-              _buildWorksTab(AssignedWorkTab.unchecked),
-              _buildWorksTab(AssignedWorkTab.checked),
-              _buildWorksTab(AssignedWorkTab.archived),
+              if (_searchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _searchController.clear();
+                    notifier.setSearchQuery('');
+                    setState(() {});
+                  },
+                ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _showSearch = false;
+                  });
+                },
+              ),
             ],
           ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          isDense: true,
         ),
-      ],
+        style: theme.textTheme.bodyMedium,
+      ),
     );
   }
 
