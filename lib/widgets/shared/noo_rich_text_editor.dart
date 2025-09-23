@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mobile_2/app_config.dart';
+import 'package:mobile_2/core/api/api_response.dart';
+import 'package:mobile_2/core/entities/media.dart';
+import 'package:mobile_2/core/providers/media_providers.dart';
 import '../../core/types/richtext.dart' as rt;
 
-class NooRichTextEditor extends StatefulWidget {
+class NooRichTextEditor extends ConsumerStatefulWidget {
   // TODO: Add toolbar support using QuillToolbar.simple when available
   final rt.RichText? initialRichText;
   final Function(rt.RichText)? onChanged;
@@ -25,15 +31,19 @@ class NooRichTextEditor extends StatefulWidget {
   });
 
   @override
-  State<NooRichTextEditor> createState() => _NooRichTextEditorState();
+  ConsumerState<NooRichTextEditor> createState() => _NooRichTextEditorState();
 }
 
-class _NooRichTextEditorState extends State<NooRichTextEditor> {
+class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
   late QuillController _controller;
+  late FocusNode _focusNode;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploading = false;
 
   @override
   void initState() {
     super.initState();
+    _focusNode = FocusNode();
     final document = widget.initialRichText != null
         ? Document.fromDelta(widget.initialRichText!.delta)
         : Document();
@@ -49,15 +59,39 @@ class _NooRichTextEditorState extends State<NooRichTextEditor> {
   void didUpdateWidget(NooRichTextEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialRichText != widget.initialRichText) {
-      final document = widget.initialRichText != null
+      final newDoc = widget.initialRichText != null
           ? Document.fromDelta(widget.initialRichText!.delta)
           : Document();
+
+      // If content didn't actually change, avoid rebuilding the controller
+      final currentDelta = _controller.document.toDelta().toJson();
+      final newDelta = newDoc.toDelta().toJson();
+      final isSame = _deepJsonEquals(currentDelta, newDelta);
+      if (isSame) return;
+
+      final hadFocus = _focusNode.hasFocus;
+      final prevSelection = _controller.selection;
+
+      // Clean up old controller
+      _controller.removeListener(_onControllerChanged);
+      _controller.dispose();
+
+      // Create new controller with preserved selection
+      final maxOffset = newDoc.length - 1; // keep within bounds
+      final safeOffset = prevSelection.baseOffset.clamp(0, maxOffset);
       _controller = QuillController(
-        document: document,
-        selection: const TextSelection.collapsed(offset: 0),
+        document: newDoc,
+        selection: TextSelection.collapsed(offset: safeOffset),
         readOnly: widget.readOnly,
       );
       _controller.addListener(_onControllerChanged);
+
+      // Restore focus after the frame if it was focused
+      if (hadFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNode.requestFocus();
+        });
+      }
     }
   }
 
@@ -69,6 +103,7 @@ class _NooRichTextEditorState extends State<NooRichTextEditor> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     super.dispose();
@@ -77,89 +112,110 @@ class _NooRichTextEditorState extends State<NooRichTextEditor> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: widget.padding ?? const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.showToolbar) ...[
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.format_bold),
-                    onPressed: () =>
-                        _controller.formatSelection(Attribute.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_italic),
-                    onPressed: () =>
-                        _controller.formatSelection(Attribute.italic),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_underline),
-                    onPressed: () =>
-                        _controller.formatSelection(Attribute.underline),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_list_bulleted),
-                    onPressed: () => _controller.formatSelection(Attribute.ul),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.format_list_numbered),
-                    onPressed: () => _controller.formatSelection(Attribute.ol),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.link),
-                    onPressed: () =>
-                        _controller.formatSelection(Attribute.link),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.image),
-                    onPressed: () async {
-                      // Handle image insertion
-                      final imageUrl = await _showImageDialog(context);
-                      if (imageUrl != null && imageUrl.isNotEmpty) {
-                        final index = _controller.selection.baseOffset;
-                        _controller.document.insert(
-                          index,
-                          BlockEmbed.image(imageUrl),
-                        );
-                        _controller.updateSelection(
-                          TextSelection.collapsed(offset: index + 1),
-                          ChangeSource.local,
-                        );
-                      }
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.video_camera_back),
-                    onPressed: () async {
-                      // Handle video insertion
-                      final videoUrl = await _showVideoDialog(context);
-                      if (videoUrl != null && videoUrl.isNotEmpty) {
-                        final index = _controller.selection.baseOffset;
-                        _controller.document.insert(
-                          index,
-                          BlockEmbed.video(videoUrl),
-                        );
-                        _controller.updateSelection(
-                          TextSelection.collapsed(offset: index + 1),
-                          ChangeSource.local,
-                        );
-                      }
-                    },
-                  ),
-                ],
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Theme.of(context).dividerColor),
+                ),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.format_bold),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.bold),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_italic),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.italic),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_underline),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.underline),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_list_bulleted),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.ul),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.format_list_numbered),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.ol),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.link),
+                      onPressed: () =>
+                          _controller.formatSelection(Attribute.link),
+                    ),
+                    _isUploading
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8.0),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : PopupMenuButton<_ImageAction>(
+                            icon: const Icon(Icons.image),
+                            onSelected: (action) async {
+                              switch (action) {
+                                case _ImageAction.pick:
+                                  await _handlePickOrCapture(
+                                    ImageSource.gallery,
+                                  );
+                                  break;
+                                case _ImageAction.capture:
+                                  await _handlePickOrCapture(
+                                    ImageSource.camera,
+                                  );
+                                  break;
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: _ImageAction.pick,
+                                child: ListTile(
+                                  leading: Icon(Icons.photo_library),
+                                  title: Text('Choose image'),
+                                ),
+                              ),
+                              const PopupMenuItem(
+                                value: _ImageAction.capture,
+                                child: ListTile(
+                                  leading: Icon(Icons.photo_camera),
+                                  title: Text('Take photo'),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ],
+                ),
               ),
             ),
-            const Divider(),
           ],
-          Expanded(
+          Container(
+            padding: widget.padding ?? const EdgeInsets.all(16.0),
             child: QuillEditor(
               controller: _controller,
               scrollController: widget.scrollController ?? ScrollController(),
-              focusNode: FocusNode(),
+              focusNode: _focusNode,
               config: QuillEditorConfig(
+                minHeight: 200,
                 embedBuilders: FlutterQuillEmbeds.editorBuilders(),
               ),
             ),
@@ -169,53 +225,83 @@ class _NooRichTextEditorState extends State<NooRichTextEditor> {
     );
   }
 
-  Future<String?> _showImageDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Insert Image'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Enter image URL'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Insert'),
-          ),
-        ],
-      ),
+  bool _deepJsonEquals(Object? a, Object? b) {
+    if (identical(a, b)) return true;
+    if (a is Map && b is Map) {
+      if (a.length != b.length) return false;
+      for (final key in a.keys) {
+        if (!b.containsKey(key)) return false;
+        if (!_deepJsonEquals(a[key], b[key])) return false;
+      }
+      return true;
+    }
+    if (a is List && b is List) {
+      if (a.length != b.length) return false;
+      for (int i = 0; i < a.length; i++) {
+        if (!_deepJsonEquals(a[i], b[i])) return false;
+      }
+      return true;
+    }
+    return a == b;
+  }
+
+  Future<void> _handlePickOrCapture(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(source: source, imageQuality: 90);
+      if (picked == null) return;
+
+      setState(() => _isUploading = true);
+
+      final bytes = await picked.readAsBytes();
+      final service = await ref.read(mediaServiceProvider.future);
+      final resp = await service.uploadImageBytes(bytes, filename: picked.name);
+
+      if (!mounted) return;
+
+      if (resp is ApiSingleResponse<MediaEntity>) {
+        final media = resp.data;
+        final absoluteUrl = _absoluteCdnUrl(media.src);
+        _insertImage(absoluteUrl);
+      } else if (resp is ApiErrorResponse) {
+        _showSnack(resp.error);
+      } else {
+        _showSnack('Unknown response while uploading image');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Failed to pick/upload image: $e');
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  void _insertImage(String url) {
+    final selection = _controller.selection;
+    final index = selection.baseOffset >= 0
+        ? selection.baseOffset
+        : _controller.document.length - 1;
+    _controller.document.insert(index, BlockEmbed.image(url));
+    _controller.updateSelection(
+      TextSelection.collapsed(offset: index + 1),
+      ChangeSource.local,
     );
   }
 
-  Future<String?> _showVideoDialog(BuildContext context) async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Insert Video'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter video URL (YouTube, etc.)',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Insert'),
-          ),
-        ],
-      ),
-    );
+  String _absoluteCdnUrl(String src) {
+    final base = AppConfig.CDN_URL;
+    if (src.isEmpty) return base;
+    final needsSlash = !base.endsWith('/') && !src.startsWith('/');
+    final doubleSlash = base.endsWith('/') && src.startsWith('/');
+    if (needsSlash) return '$base/$src';
+    if (doubleSlash) return base + src.substring(1);
+    return base + src;
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
+
+enum _ImageAction { pick, capture }

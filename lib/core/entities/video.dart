@@ -10,7 +10,7 @@ part 'video.g.dart';
 
 enum VideoServiceType { yandex }
 
-enum VideoState { notUploaded, uploaded, uploading, failed }
+enum VideoState { notUploaded, uploaded, uploading, failed, published }
 
 enum VideoAccessType { everyone, courseId, mentorId, role }
 

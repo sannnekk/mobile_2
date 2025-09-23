@@ -17,6 +17,16 @@ class NooRichTextDisplay extends StatelessWidget {
     this.scrollController,
   });
 
+  TextStyle _defaultTextStyle(Attribute<dynamic> attribute) {
+    final baseStyle = textStyle ?? const TextStyle(height: 1.8);
+
+    if (attribute.key == 'link') {
+      return baseStyle.copyWith(decoration: TextDecoration.none);
+    }
+
+    return baseStyle;
+  }
+
   @override
   Widget build(BuildContext context) {
     final document = Document.fromDelta(richText.delta);
@@ -34,13 +44,7 @@ class NooRichTextDisplay extends StatelessWidget {
         config: QuillEditorConfig(
           showCursor: false,
           embedBuilders: FlutterQuillEmbeds.editorBuilders(),
-          customStyleBuilder: (attribute) {
-            final baseStyle = textStyle ?? const TextStyle(height: 1.8);
-            if (attribute.key == 'link') {
-              return baseStyle.copyWith(decoration: TextDecoration.none);
-            }
-            return baseStyle;
-          },
+          customStyleBuilder: _defaultTextStyle,
         ),
       ),
     );

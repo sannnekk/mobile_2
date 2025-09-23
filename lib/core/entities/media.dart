@@ -1,19 +1,21 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mobile_2/core/types/api_entity.dart';
 
 part 'media.g.dart';
 
 @JsonSerializable()
-class MediaEntity extends ApiEntity {
+class MediaEntity {
+  final String? id;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final String src;
   final String name;
   final String? type;
   final int order;
 
   MediaEntity({
-    required super.id,
-    required super.createdAt,
-    super.updatedAt,
+    this.id,
+    this.createdAt,
+    this.updatedAt,
     required this.src,
     required this.name,
     this.type,

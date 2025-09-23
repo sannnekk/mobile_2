@@ -7,8 +7,10 @@ part of 'media.dart';
 // **************************************************************************
 
 MediaEntity _$MediaEntityFromJson(Map<String, dynamic> json) => MediaEntity(
-  id: json['id'] as String,
-  createdAt: DateTime.parse(json['createdAt'] as String),
+  id: json['id'] as String?,
+  createdAt: json['createdAt'] == null
+      ? null
+      : DateTime.parse(json['createdAt'] as String),
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
@@ -21,7 +23,7 @@ MediaEntity _$MediaEntityFromJson(Map<String, dynamic> json) => MediaEntity(
 Map<String, dynamic> _$MediaEntityToJson(MediaEntity instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
       'src': instance.src,
       'name': instance.name,

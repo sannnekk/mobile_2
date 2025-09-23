@@ -293,19 +293,21 @@ class AssignedWorkAnswersNotifier
   AssignedWorkAnswersNotifier(this._service, this._assignedWorkId, this._ref)
     : _debouncer = Debouncer(delay: const Duration(milliseconds: 1000)),
       super(const AssignedWorkAnswersState()) {
-    // Load initial answers when the work is loaded
-    _loadInitialAnswers();
-  }
-
-  void _loadInitialAnswers() {
-    final workAsync = _ref.watch(assignedWorkDetailProvider(_assignedWorkId));
-    workAsync.whenData((work) {
-      final answersMap = <String, AssignedWorkAnswerEntity>{};
-      for (final answer in work.answers) {
-        answersMap[answer.taskId] = answer;
-      }
-      state = state.copyWith(answers: answersMap);
-    });
+    // Keep answers in sync with the latest work details while this notifier is alive.
+    // Using listen avoids creating a hard dependency chain that could keep providers alive unnecessarily.
+    _ref.listen<AsyncValue<AssignedWorkEntity>>(
+      assignedWorkDetailProvider(_assignedWorkId),
+      (previous, next) {
+        next.whenData((work) {
+          final answersMap = <String, AssignedWorkAnswerEntity>{};
+          for (final answer in work.answers) {
+            answersMap[answer.taskId] = answer;
+          }
+          state = state.copyWith(answers: answersMap);
+        });
+      },
+      fireImmediately: true,
+    );
   }
 
   void updateAnswer(String taskId, String? word, RichText? content) {
@@ -383,12 +385,11 @@ class AssignedWorkAnswersNotifier
   }
 }
 
-final assignedWorkAnswersProvider =
-    StateNotifierProvider.family<
-      AssignedWorkAnswersNotifier,
-      AssignedWorkAnswersState,
-      String
-    >((ref, assignedWorkId) {
+final assignedWorkAnswersProvider = StateNotifierProvider.autoDispose
+    .family<AssignedWorkAnswersNotifier, AssignedWorkAnswersState, String>((
+      ref,
+      assignedWorkId,
+    ) {
       final serviceAsync = ref.watch(assignedWorkServiceProvider);
       final service = serviceAsync.maybeWhen(
         data: (s) => s,

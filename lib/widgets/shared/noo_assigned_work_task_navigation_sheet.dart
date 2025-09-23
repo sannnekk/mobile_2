@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/providers/assigned_work_providers.dart';
+import 'package:mobile_2/styles/colors.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_task.dart';
 import 'package:mobile_2/widgets/shared/noo_subject.dart';
 import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
@@ -85,7 +86,7 @@ class _NooAssignedWorkTaskNavigationSheetState
     if (hasAnswer &&
         hasComment &&
         commentScore == task.highestScore.toDouble()) {
-      return Colors.green; // success color
+      return AppColors.success; // success color
     }
 
     // Danger: (answer submitted, has comment, score == 0) OR (mode is read, work is checked, no comment)
@@ -96,7 +97,7 @@ class _NooAssignedWorkTaskNavigationSheetState
 
     if ((hasAnswer && hasComment && commentScore == 0) ||
         (mode == AssignedWorkMode.read && isWorkChecked && !hasComment)) {
-      return Colors.red; // danger color
+      return AppColors.danger; // danger color
     }
 
     // Warning: answer submitted, has comment, score != 0 and score != highestScore
@@ -104,7 +105,7 @@ class _NooAssignedWorkTaskNavigationSheetState
         hasComment &&
         commentScore != 0 &&
         commentScore != task.highestScore.toDouble()) {
-      return Colors.orange; // warning color
+      return AppColors.warning; // warning color
     }
 
     // Default: no special color
@@ -151,6 +152,9 @@ class _NooAssignedWorkTaskNavigationSheetState
         final screenWidth = MediaQuery.of(context).size.width;
         final crossAxisCount = screenWidth < 600 ? 8 : 10;
         final tasks = widget.assignedWork?.work?.tasks ?? [];
+        final mode = widget.assignedWork == null
+            ? null
+            : _getMode(widget.assignedWork!);
 
         return GridView.builder(
           controller: widget.scrollController,
@@ -168,17 +172,17 @@ class _NooAssignedWorkTaskNavigationSheetState
             final comment = widget.assignedWork?.comments
                 .where((c) => c.taskId == task.id)
                 .firstOrNull;
-            final borderColor = isCurrent
-                ? theme.colorScheme.secondary
-                : (widget.assignedWork != null
-                      ? _getTaskBorderColor(
-                          context,
-                          widget.assignedWork!,
-                          task,
-                          answer,
-                          comment,
-                        )
-                      : theme.dividerColor);
+            final hasAnswer = answer != null;
+            final borderColor = (widget.assignedWork != null
+                ? _getTaskBorderColor(
+                    context,
+                    widget.assignedWork!,
+                    task,
+                    answer,
+                    comment,
+                  )
+                : theme.dividerColor);
+            final backgroundColor = isCurrent ? theme.dividerColor : null;
 
             return InkWell(
               onTap: () {
@@ -188,14 +192,32 @@ class _NooAssignedWorkTaskNavigationSheetState
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: borderColor, width: 2),
+                  color: backgroundColor,
                 ),
                 child: Center(
-                  child: Text(
-                    '${task.order}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.titleMedium?.color ?? Colors.black,
-                      fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${task.order}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color:
+                              theme.textTheme.titleMedium?.color ??
+                              Colors.black,
+                          fontWeight: isCurrent
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      if (hasAnswer && mode == AssignedWorkMode.solve) ...[
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: AppColors.success,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),

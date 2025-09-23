@@ -72,4 +72,5 @@ const _$VideoStateEnumMap = {
   VideoState.uploaded: 'uploaded',
   VideoState.uploading: 'uploading',
   VideoState.failed: 'failed',
+  VideoState.published: 'published',
 };

@@ -74,7 +74,15 @@ class AssignedWorkAnswerEntity extends ApiEntity {
   factory AssignedWorkAnswerEntity.fromJson(Map<String, dynamic> json) =>
       _$AssignedWorkAnswerEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => _$AssignedWorkAnswerEntityToJson(this);
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> json = _$AssignedWorkAnswerEntityToJson(this);
+
+    if (json['id'] == null || (json['id'] as String).trim() == '') {
+      json.remove('id');
+    }
+
+    return json;
+  }
 }
 
 @JsonSerializable()
