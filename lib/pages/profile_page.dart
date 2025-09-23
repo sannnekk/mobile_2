@@ -21,6 +21,9 @@ import 'package:mobile_2/core/entities/statistics.dart';
 import 'package:mobile_2/core/utils/debouncer.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mobile_2/core/entities/media.dart';
+import 'package:mobile_2/core/providers/media_providers.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -37,6 +40,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   WorkType? _selectedWorkType;
   late Debouncer _debouncer;
   late StatisticsRequest _currentRequest;
+  bool _changingAvatar = false;
 
   @override
   void initState() {
@@ -147,8 +151,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  // Huge avatar
-                  NooUserAvatar(user: user, avatar: user.avatar, radius: 80),
+                  // Huge avatar with edit capability
+                  _buildEditableAvatar(user),
                   const SizedBox(height: 24),
 
                   // User info
@@ -183,6 +187,171 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         ),
       ),
     );
+  }
+
+  Widget _buildEditableAvatar(UserEntity user) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        GestureDetector(
+          onTap: _changingAvatar ? null : _showAvatarOptions,
+          child: NooUserAvatar(user: user, avatar: user.avatar, radius: 80),
+        ),
+        Positioned(
+          bottom: 4,
+          right: 4,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              shape: BoxShape.circle,
+            ),
+            padding: const EdgeInsets.all(6),
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+          ),
+        ),
+        if (_changingAvatar)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.35),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _showAvatarOptions() async {
+    if (!mounted) return;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Выбрать из галереи'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Сделать фото'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source != null) {
+      await _handlePickOrCapture(source);
+    }
+  }
+
+  Future<void> _handlePickOrCapture(ImageSource source) async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(source: source, imageQuality: 90);
+      if (picked == null) return;
+
+      setState(() => _changingAvatar = true);
+
+      final bytes = await picked.readAsBytes();
+
+      // 1) Upload media
+      final mediaResp = await ApiResponseHandler.handleCall<MediaEntity>(
+        () async {
+          final mediaService = await ref.read(mediaServiceProvider.future);
+          return mediaService.uploadImageBytes(bytes, filename: picked.name);
+        },
+      );
+
+      if (!mounted) return;
+
+      if (!mediaResp.isSuccess || mediaResp.data == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(mediaResp.error ?? 'Ошибка загрузки изображения'),
+          ),
+        );
+        setState(() => _changingAvatar = false);
+        return;
+      }
+
+      final uploaded = mediaResp.data!;
+
+      // 2) Patch user avatar
+      final user = ref.read(authStateProvider).user;
+      if (user == null) {
+        setState(() => _changingAvatar = false);
+        return;
+      }
+
+      final newAvatar = UserAvatarEntity(
+        id: user.avatar?.id ?? '',
+        createdAt: user.avatar?.createdAt ?? DateTime.now(),
+        media: uploaded,
+        avatarType: AvatarType.custom,
+        telegramAvatarUrl: '',
+        updatedAt: user.avatar?.updatedAt,
+      );
+
+      final patchResp = await ApiResponseHandler.handleCall<void>(() async {
+        final auth = await ref.read(authServiceProvider.future);
+        return auth.updateUserAvatar(user.id.toString(), newAvatar);
+      });
+
+      if (!mounted) return;
+
+      if (patchResp.isSuccess) {
+        // Update local user state for immediate UI refresh
+        final updatedUser = UserEntity(
+          id: user.id,
+          createdAt: user.createdAt,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          username: user.username,
+          telegramUsername: user.telegramUsername,
+          telegramId: user.telegramId,
+          telegramNotificationsEnabled: user.telegramNotificationsEnabled,
+          isBlocked: user.isBlocked,
+          avatar: newAvatar,
+          updatedAt: user.updatedAt,
+          mentorAssignmentsAsStudent: user.mentorAssignmentsAsStudent,
+          mentorAssignmentsAsMentor: user.mentorAssignmentsAsMentor,
+        );
+        await ref.read(authStateProvider.notifier).updateUser(updatedUser);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Аватар обновлён')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(patchResp.error ?? 'Ошибка обновления аватара'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Не удалось изменить аватар: $e')));
+    } finally {
+      if (mounted) setState(() => _changingAvatar = false);
+    }
   }
 
   Widget _buildStatisticsTab() {

@@ -25,5 +25,15 @@ class MediaEntity {
   factory MediaEntity.fromJson(Map<String, dynamic> json) =>
       _$MediaEntityFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MediaEntityToJson(this);
+  Map<String, dynamic> toJson() {
+    final json = _$MediaEntityToJson(this);
+
+    if (json['id'] == null || (json['id'] as String).trim() == '') {
+      json.remove('id');
+    }
+
+    json['mimeType'] = json['type'] ?? 'image/jpeg';
+
+    return json;
+  }
 }
