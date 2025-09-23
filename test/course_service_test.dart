@@ -77,12 +77,11 @@ void main() {
         'stub',
         isArchived: false,
       );
-      expect(resp is ApiSingleResponse<List<CourseAssignmentEntity>>, isTrue);
-      final singleResp =
-          resp as ApiSingleResponse<List<CourseAssignmentEntity>>;
-      expect(singleResp.data.length, 1);
-      expect(singleResp.data.first.id, 'ca1-act');
-      expect(singleResp.data.first.isArchived, false);
+      expect(resp is ApiListResponse<CourseAssignmentEntity>, isTrue);
+      final listResp = resp as ApiListResponse<CourseAssignmentEntity>;
+      expect(listResp.data.length, 1);
+      expect(listResp.data.first.id, 'ca1-act');
+      expect(listResp.data.first.isArchived, false);
     },
   );
 
@@ -91,10 +90,10 @@ void main() {
       'stub',
       isArchived: true,
     );
-    expect(resp is ApiSingleResponse<List<CourseAssignmentEntity>>, isTrue);
-    final singleResp = resp as ApiSingleResponse<List<CourseAssignmentEntity>>;
-    expect(singleResp.data.length, 1);
-    expect(singleResp.data.first.id, 'ca1-arch');
-    expect(singleResp.data.first.isArchived, true);
+    expect(resp is ApiListResponse<CourseAssignmentEntity>, isTrue);
+    final listResp = resp as ApiListResponse<CourseAssignmentEntity>;
+    expect(listResp.data.length, 1);
+    expect(listResp.data.first.id, 'ca1-arch');
+    expect(listResp.data.first.isArchived, true);
   });
 }

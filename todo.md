@@ -1,5 +1,5 @@
 1. Polls
-2. Archive/unarchive course assigments, pin/unpin
+2. ✅ Archive/unarchive course assigments, pin/unpin
 3. Check one by one & show answer before check
 4. ✅ Task type essay, final essay, dictation: word count, detailed score
 5. Change avatar

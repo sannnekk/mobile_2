@@ -60,4 +60,40 @@ class CourseService {
     );
     return resp;
   }
+
+  // Archive course assignment
+  Future<ApiResponse<void>> archiveCourseAssignment(String assignmentId) async {
+    final resp = await _client.patch<void>(
+      path: '/course/$assignmentId/archive',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
+
+  // Unarchive course assignment
+  Future<ApiResponse<void>> unarchiveCourseAssignment(String assignmentId) async {
+    final resp = await _client.patch<void>(
+      path: '/course/$assignmentId/unarchive',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
+
+  // Pin course assignment
+  Future<ApiResponse<void>> pinCourseAssignment(String assignmentId) async {
+    final resp = await _client.patch<void>(
+      path: '/course/$assignmentId/pin',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
+
+  // Unpin course assignment
+  Future<ApiResponse<void>> unpinCourseAssignment(String assignmentId) async {
+    final resp = await _client.patch<void>(
+      path: '/course/$assignmentId/unpin',
+      acceptEmpty: true,
+    );
+    return resp;
+  }
 }

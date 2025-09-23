@@ -125,16 +125,58 @@ class _CoursesPageState extends ConsumerState<CoursesPage>
                 course: courseAssignment.course!,
                 isPinned: courseAssignment.isPinned,
                 actions: [
-                  (
-                    label: 'Редактировать',
-                    icon: Icons.edit,
-                    onPressed: () => _onEditCourse(courseAssignment.course!),
-                  ),
-                  (
-                    label: 'Удалить',
-                    icon: Icons.delete,
-                    onPressed: () => _onDeleteCourse(courseAssignment.course!),
-                  ),
+                  if (!courseAssignment.isArchived)
+                    (
+                      label: 'Архивировать курс',
+                      icon: Icons.archive,
+                      onPressed: () async {
+                        await courseNotifier.archiveCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс заархивирован')),
+                          );
+                        }
+                      },
+                    ),
+                  if (courseAssignment.isArchived)
+                    (
+                      label: 'Разархивировать курс',
+                      icon: Icons.unarchive,
+                      onPressed: () async {
+                        await courseNotifier.unarchiveCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс разархивирован')),
+                          );
+                        }
+                      },
+                    ),
+                  if (!courseAssignment.isPinned)
+                    (
+                      label: 'Закрепить курс',
+                      icon: Icons.push_pin,
+                      onPressed: () async {
+                        await courseNotifier.pinCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс закреплен')),
+                          );
+                        }
+                      },
+                    ),
+                  if (courseAssignment.isPinned)
+                    (
+                      label: 'Открепить курс',
+                      icon: Icons.push_pin_outlined,
+                      onPressed: () async {
+                        await courseNotifier.unpinCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс откреплен')),
+                          );
+                        }
+                      },
+                    ),
                 ],
               ),
             ),
@@ -192,17 +234,60 @@ class _CoursesPageState extends ConsumerState<CoursesPage>
               equalHeight: false,
               itemBuilder: (courseAssignment) => NooCourseCard(
                 course: courseAssignment.course!,
+                isPinned: courseAssignment.isPinned,
                 actions: [
-                  (
-                    label: 'Восстановить',
-                    icon: Icons.restore,
-                    onPressed: () => _onRestoreCourse(courseAssignment.course!),
-                  ),
-                  (
-                    label: 'Удалить навсегда',
-                    icon: Icons.delete_forever,
-                    onPressed: () => _onDeleteCourse(courseAssignment.course!),
-                  ),
+                  if (!courseAssignment.isArchived)
+                    (
+                      label: 'Архивировать курс',
+                      icon: Icons.archive,
+                      onPressed: () async {
+                        await courseNotifier.archiveCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс заархивирован')),
+                          );
+                        }
+                      },
+                    ),
+                  if (courseAssignment.isArchived)
+                    (
+                      label: 'Разархивировать курс',
+                      icon: Icons.unarchive,
+                      onPressed: () async {
+                        await courseNotifier.unarchiveCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс разархивирован')),
+                          );
+                        }
+                      },
+                    ),
+                  if (!courseAssignment.isPinned)
+                    (
+                      label: 'Закрепить курс',
+                      icon: Icons.push_pin,
+                      onPressed: () async {
+                        await courseNotifier.pinCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс закреплен')),
+                          );
+                        }
+                      },
+                    ),
+                  if (courseAssignment.isPinned)
+                    (
+                      label: 'Открепить курс',
+                      icon: Icons.push_pin_outlined,
+                      onPressed: () async {
+                        await courseNotifier.unpinCourseAssignment(courseAssignment.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Курс откреплен')),
+                          );
+                        }
+                      },
+                    ),
                 ],
               ),
             ),

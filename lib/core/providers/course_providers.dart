@@ -98,8 +98,14 @@ class CourseAssignmentsNotifier extends StateNotifier<CourseAssignmentsState> {
       if (!mounted) return;
 
       if (response is ApiListResponse<CourseAssignmentEntity>) {
+        final sortedData = List<CourseAssignmentEntity>.from(response.data)
+          ..sort((a, b) {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            return 0;
+          });
         state = state.copyWith(
-          assignments: response.data,
+          assignments: sortedData,
           isLoading: false,
           currentPage: targetPage,
           totalItems: response.total,
@@ -134,6 +140,82 @@ class CourseAssignmentsNotifier extends StateNotifier<CourseAssignmentsState> {
   Future<void> goToPage(int page) async {
     if (page >= 1 && (state.totalPages == null || page <= state.totalPages!)) {
       await loadAssignments(page: page);
+    }
+  }
+
+  Future<void> archiveCourseAssignment(String assignmentId) async {
+    try {
+      final result = await ApiResponseHandler.handleCall<void>(
+        () async => _courseService.archiveCourseAssignment(assignmentId),
+      );
+      if (result.isSuccess) {
+        // Refetch both tabs
+        ref
+            .read(courseAssignmentsNotifierProvider(false).notifier)
+            .refreshAssignments(isArchived: false);
+        ref
+            .read(courseAssignmentsNotifierProvider(true).notifier)
+            .refreshAssignments(isArchived: true);
+      }
+    } catch (e) {
+      // Handle error if needed
+    }
+  }
+
+  Future<void> unarchiveCourseAssignment(String assignmentId) async {
+    try {
+      final result = await ApiResponseHandler.handleCall<void>(
+        () async => _courseService.unarchiveCourseAssignment(assignmentId),
+      );
+      if (result.isSuccess) {
+        // Refetch both tabs
+        ref
+            .read(courseAssignmentsNotifierProvider(false).notifier)
+            .refreshAssignments(isArchived: false);
+        ref
+            .read(courseAssignmentsNotifierProvider(true).notifier)
+            .refreshAssignments(isArchived: true);
+      }
+    } catch (e) {
+      // Handle error if needed
+    }
+  }
+
+  Future<void> pinCourseAssignment(String assignmentId) async {
+    try {
+      final result = await ApiResponseHandler.handleCall<void>(
+        () async => _courseService.pinCourseAssignment(assignmentId),
+      );
+      if (result.isSuccess) {
+        // Refetch both tabs
+        ref
+            .read(courseAssignmentsNotifierProvider(false).notifier)
+            .refreshAssignments(isArchived: false);
+        ref
+            .read(courseAssignmentsNotifierProvider(true).notifier)
+            .refreshAssignments(isArchived: true);
+      }
+    } catch (e) {
+      // Handle error if needed
+    }
+  }
+
+  Future<void> unpinCourseAssignment(String assignmentId) async {
+    try {
+      final result = await ApiResponseHandler.handleCall<void>(
+        () async => _courseService.unpinCourseAssignment(assignmentId),
+      );
+      if (result.isSuccess) {
+        // Refetch both tabs
+        ref
+            .read(courseAssignmentsNotifierProvider(false).notifier)
+            .refreshAssignments(isArchived: false);
+        ref
+            .read(courseAssignmentsNotifierProvider(true).notifier)
+            .refreshAssignments(isArchived: true);
+      }
+    } catch (e) {
+      // Handle error if needed
     }
   }
 }

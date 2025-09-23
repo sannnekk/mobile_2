@@ -28,10 +28,31 @@ class NooCourseCard extends StatelessWidget {
         // Course image
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: NooUploadedImage(
-            media: course.images.firstOrNull,
-            fit: BoxFit.cover,
-            aspectRatio: 1.5848,
+          child: Stack(
+            children: [
+              NooUploadedImage(
+                media: course.images.firstOrNull,
+                fit: BoxFit.cover,
+                aspectRatio: 1.5848,
+              ),
+              if (isPinned)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.push_pin,
+                      size: 16,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
 
