@@ -16,4 +16,5 @@
 16. Disallow login for anyone but students
 17. Native back button handling
 18. Normal readme & docs
-19. Logout button
+19. ✅ Logout button
+20. ✅ Text comments in answer

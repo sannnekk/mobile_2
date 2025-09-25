@@ -17,6 +17,8 @@ class RichText {
     'list_ordered',
     'list_checked',
     'align',
+    // Display-only attribute for highlighting and tapping comments in NooRichTextDisplay
+    'comment',
     //'table': TableAttribute, // TODO: Add support for tables
     //'comment': null,
     //'image-comment': null,
