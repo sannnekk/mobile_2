@@ -3,6 +3,7 @@ import 'package:mobile_2/core/api/api_response.dart';
 import 'package:mobile_2/core/api/query_params.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
 import 'package:mobile_2/core/utils/string_utils.dart';
+import 'package:mobile_2/core/types/richtext.dart' as rt;
 
 class AssignedWorkService {
   final ApiClient _client;
@@ -98,11 +99,23 @@ class AssignedWorkService {
   // Solve assigned work
   Future<ApiResponse<void>> solveAssignedWork(
     String assignedWorkId,
-    List<AssignedWorkAnswerEntity> answers,
-  ) async {
+    List<AssignedWorkAnswerEntity> answers, {
+    rt.RichText? studentComment,
+    rt.RichText? mentorComment,
+  }) async {
+    final Map<String, dynamic> body = {
+      'answers': answers.map((a) => a.toJson()).toList(),
+    };
+    if (studentComment != null) {
+      body['studentComment'] = studentComment.toJson();
+    }
+    if (mentorComment != null) {
+      body['mentorComment'] = mentorComment.toJson();
+    }
+
     final resp = await _client.patch<void>(
       path: '/assigned-work/$assignedWorkId/solve',
-      body: {'answers': answers.map((a) => a.toJson()).toList()},
+      body: body,
       acceptEmpty: true,
     );
     return resp;

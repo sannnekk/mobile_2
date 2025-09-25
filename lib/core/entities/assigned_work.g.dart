@@ -110,6 +110,12 @@ AssignedWorkEntity _$AssignedWorkEntityFromJson(
   work: json['work'] == null
       ? null
       : WorkEntity.fromJson(json['work'] as Map<String, dynamic>),
+  studentComment: const RichTextConverter().fromJson(
+    json['studentComment'] as Map<String, dynamic>?,
+  ),
+  mentorComment: const RichTextConverter().fromJson(
+    json['mentorComment'] as Map<String, dynamic>?,
+  ),
   solveStatus: json['solveStatus'] == null
       ? AssignedWorkSolveStatus.notStarted
       : AssignedWorkEntity._solveStatusFromString(
@@ -168,6 +174,8 @@ Map<String, dynamic> _$AssignedWorkEntityToJson(
   'student': instance.student,
   'workId': instance.workId,
   'work': instance.work,
+  'studentComment': const RichTextConverter().toJson(instance.studentComment),
+  'mentorComment': const RichTextConverter().toJson(instance.mentorComment),
   'solveStatus': AssignedWorkEntity._solveStatusToString(instance.solveStatus),
   'checkStatus': AssignedWorkEntity._checkStatusToString(instance.checkStatus),
   'solveDeadlineAt': instance.solveDeadlineAt?.toIso8601String(),

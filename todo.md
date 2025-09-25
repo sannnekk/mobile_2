@@ -7,14 +7,13 @@
 7. My polls section in profile
 8. User sessions
 9. Favourite task cards
-10. Material search
-11. ✅ Assigned work info in material
-12. Filter isActive materials & chapters
-13. Pinned materials & chapters
-14. Assigned work comments
-15. ✅ Assigned work search
-16. ✅ Disallow login for anyone but students
-17. Native back button handling
-18. Normal readme & docs
-19. ✅ Logout button
-20. ✅ Text comments in answer
+10. ✅ Assigned work info in material
+11. ✅ Filter isActive materials & chapters
+12. Pinned materials & chapters
+13. ✅ Assigned work comments
+14. ✅ Assigned work search
+15. ✅ Disallow login for anyone but students
+16. Native back button handling
+17. Normal readme & docs
+18. ✅ Logout button
+19. ✅ Text comments in answer

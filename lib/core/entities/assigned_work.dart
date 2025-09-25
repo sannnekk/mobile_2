@@ -117,6 +117,10 @@ class AssignedWorkEntity extends ApiEntity {
   final UserEntity? student;
   final String? workId;
   final WorkEntity? work;
+  @RichTextConverter()
+  final RichText? studentComment;
+  @RichTextConverter()
+  final RichText? mentorComment;
   @JsonKey(
     fromJson: AssignedWorkEntity._solveStatusFromString,
     toJson: AssignedWorkEntity._solveStatusToString,
@@ -153,6 +157,8 @@ class AssignedWorkEntity extends ApiEntity {
     this.student,
     this.workId,
     this.work,
+    this.studentComment,
+    this.mentorComment,
     this.solveStatus = AssignedWorkSolveStatus.notStarted,
     this.checkStatus = AssignedWorkCheckStatus.notChecked,
     this.solveDeadlineAt,

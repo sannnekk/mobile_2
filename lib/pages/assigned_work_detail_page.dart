@@ -11,6 +11,7 @@ import 'package:mobile_2/widgets/shared/noo_loading_overlay.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_work_submitted_modal.dart';
 import 'package:mobile_2/widgets/shared/draggable_bottom_sheet.dart';
+import 'package:mobile_2/core/types/richtext.dart' as rt;
 
 class AssignedWorkDetailPage extends ConsumerStatefulWidget {
   final String workId;
@@ -29,6 +30,7 @@ class _AssignedWorkDetailPageState
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   bool _isSubmitting = false;
+  rt.RichText? _studentCommentDraft;
 
   @override
   void initState() {
@@ -110,6 +112,8 @@ class _AssignedWorkDetailPageState
         final response = await service.solveAssignedWork(
           widget.workId,
           answers,
+          studentComment: _studentCommentDraft ?? work.studentComment,
+          mentorComment: work.mentorComment,
         );
         final result = ApiResponseHandler.handle(response);
 
@@ -220,6 +224,7 @@ class _AssignedWorkDetailPageState
   ) {
     final tasks = work.work?.tasks ?? [];
     final mode = _getMode(work);
+    _studentCommentDraft = _studentCommentDraft ?? work.studentComment;
 
     if (mode == AssignedWorkMode.check) {
       return Center(
@@ -299,6 +304,12 @@ class _AssignedWorkDetailPageState
               scrollController: scrollController,
               onWorkUpdated: () {
                 ref.invalidate(assignedWorkDetailProvider(widget.workId));
+              },
+              studentCommentDraft: _studentCommentDraft,
+              onStudentCommentChanged: (value) {
+                setState(() {
+                  _studentCommentDraft = value;
+                });
               },
             );
           },

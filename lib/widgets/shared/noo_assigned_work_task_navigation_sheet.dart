@@ -12,6 +12,9 @@ import 'package:mobile_2/widgets/shared/noo_subject.dart';
 import 'package:mobile_2/widgets/shared/noo_tab_bar.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
+import 'package:mobile_2/widgets/shared/noo_rich_text_display.dart';
+import 'package:mobile_2/widgets/shared/noo_rich_text_editor.dart';
+import 'package:mobile_2/core/types/richtext.dart' as rt;
 import 'package:mobile_2/widgets/shared/noo_status_tags.dart';
 import 'package:mobile_2/widgets/shared/noo_score_widget.dart';
 import 'package:mobile_2/widgets/shared/noo_user_info_card.dart';
@@ -24,6 +27,9 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   final Function(int) onTaskSelected;
   final ScrollController? scrollController;
   final VoidCallback? onWorkUpdated;
+  // Draft of student comment lifted to parent (detail page)
+  final rt.RichText? studentCommentDraft;
+  final ValueChanged<rt.RichText>? onStudentCommentChanged;
 
   const NooAssignedWorkTaskNavigationSheet({
     super.key,
@@ -33,6 +39,8 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
     required this.onTaskSelected,
     this.scrollController,
     this.onWorkUpdated,
+    this.studentCommentDraft,
+    this.onStudentCommentChanged,
   });
 
   @override
@@ -50,7 +58,7 @@ class _NooAssignedWorkTaskNavigationSheetState
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -296,7 +304,8 @@ class _NooAssignedWorkTaskNavigationSheetState
                 controller: _tabController,
                 tabs: const [
                   Tab(text: 'Задания'),
-                  Tab(text: 'Информация о работе'),
+                  Tab(text: 'Работа'),
+                  Tab(text: 'Комментарии'),
                 ],
               ),
             ],
@@ -307,6 +316,7 @@ class _NooAssignedWorkTaskNavigationSheetState
               children: [
                 _buildTasksTab(context, theme),
                 _buildInfoTab(context, theme),
+                _buildCommentsTab(context, theme),
               ],
             ),
           ),
@@ -485,6 +495,57 @@ class _NooAssignedWorkTaskNavigationSheetState
             'Сохранение работы происходит автоматически, если есть интернет-соединение.',
             dimmed: true,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentsTab(BuildContext context, ThemeData theme) {
+    final work = widget.assignedWork;
+    if (work == null) {
+      return const Center(child: NooText('Загрузка...'));
+    }
+
+    final mode = _getMode(work);
+    final isReadOnly = mode != AssignedWorkMode.solve;
+    final initialStudentComment =
+        widget.studentCommentDraft ?? work.studentComment;
+
+    return SingleChildScrollView(
+      controller: widget.scrollController,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Student comment (editable in solve mode)
+          NooTextTitle('Передать привет куратору', size: NooTitleSize.small),
+          const SizedBox(height: 8),
+          if (isReadOnly)
+            NooRichTextDisplay(
+              richText: initialStudentComment ?? rt.RichText.empty(),
+              padding: const EdgeInsets.all(0),
+            )
+          else
+            NooRichTextEditor(
+              initialRichText: initialStudentComment,
+              onChanged: (value) => widget.onStudentCommentChanged?.call(value),
+            ),
+
+          const SizedBox(height: 24),
+
+          // Mentor comment (always display only if present)
+          if (work.mentorComment != null)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NooTextTitle('Комментарий куратора', size: NooTitleSize.small),
+                const SizedBox(height: 8),
+                NooRichTextDisplay(
+                  richText: work.mentorComment!,
+                  padding: const EdgeInsets.all(0),
+                ),
+              ],
+            ),
         ],
       ),
     );

@@ -24,10 +24,13 @@ class ChapterTree extends StatefulWidget {
 
 class _ChapterTreeState extends State<ChapterTree> {
   final Map<String, bool> _expanded = {};
+  // Cache of top-level chapters that are visible (isActive = true)
+  late List<CourseChapterEntity> _visibleChapters;
 
   @override
   void initState() {
     super.initState();
+    _recomputeVisibleChapters();
     _initializeExpandedState();
   }
 
@@ -36,8 +39,13 @@ class _ChapterTreeState extends State<ChapterTree> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedMaterialId != widget.selectedMaterialId ||
         oldWidget.chapters != widget.chapters) {
+      _recomputeVisibleChapters();
       _initializeExpandedState();
     }
+  }
+
+  void _recomputeVisibleChapters() {
+    _visibleChapters = widget.chapters.where((c) => c.isActive).toList();
   }
 
   void _initializeExpandedState() {
@@ -73,11 +81,13 @@ class _ChapterTreeState extends State<ChapterTree> {
     String materialId,
   ) {
     // Check direct materials
-    if (chapter.materials.any((material) => material.id == materialId)) {
+    if (chapter.materials.any(
+      (material) => material.isActive && material.id == materialId,
+    )) {
       return true;
     }
     // Check sub-chapters recursively
-    for (final subChapter in chapter.chapters) {
+    for (final subChapter in chapter.chapters.where((c) => c.isActive)) {
       if (_chapterContainsMaterial(subChapter, materialId)) {
         return true;
       }
@@ -92,9 +102,9 @@ class _ChapterTreeState extends State<ChapterTree> {
       //physics: const NeverScrollableScrollPhysics(),
       controller: widget.scrollController,
       padding: EdgeInsets.zero,
-      itemCount: widget.chapters.length,
+      itemCount: _visibleChapters.length,
       itemBuilder: (context, index) {
-        final chapter = widget.chapters[index];
+        final chapter = _visibleChapters[index];
         return _ChapterTile(
           chapter: chapter,
           isExpanded: _expanded[chapter.id] ?? false,
@@ -184,9 +194,14 @@ class _ChapterTileState extends State<_ChapterTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final filteredMaterials = widget.chapter.materials
+        .where((m) => m.isActive)
+        .toList();
+    final filteredChapters = widget.chapter.chapters
+        .where((c) => c.isActive)
+        .toList();
     final hasChildren =
-        widget.chapter.chapters.isNotEmpty ||
-        widget.chapter.materials.isNotEmpty;
+        filteredChapters.isNotEmpty || filteredMaterials.isNotEmpty;
     final canExpand = hasChildren && widget.depth < widget.maxDepth;
 
     return Column(
@@ -237,7 +252,7 @@ class _ChapterTileState extends State<_ChapterTile>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Materials in this chapter with staggered animation
-                    ...widget.chapter.materials.asMap().entries.map(
+                    ...filteredMaterials.asMap().entries.map(
                       (entry) => AnimatedMaterialTile(
                         material: entry.value,
                         isSelected: widget.selectedMaterialId == entry.value.id,
@@ -250,7 +265,7 @@ class _ChapterTileState extends State<_ChapterTile>
                       ),
                     ),
                     // Sub-chapters
-                    ...widget.chapter.chapters.map(
+                    ...filteredChapters.map(
                       (subChapter) => _ChapterTile(
                         chapter: subChapter,
                         isExpanded:
