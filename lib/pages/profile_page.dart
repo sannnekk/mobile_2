@@ -5,6 +5,7 @@ import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/providers/statistics_providers.dart';
 import 'package:mobile_2/core/providers/mentor_providers.dart';
 import 'package:mobile_2/widgets/shared/noo_app_scaffold.dart';
+import 'package:mobile_2/widgets/shared/noo_logout_button.dart';
 import 'package:mobile_2/widgets/shared/noo_text.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
 import 'package:mobile_2/widgets/shared/noo_user_avatar.dart';
@@ -157,6 +158,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
                   // User info
                   NooUserInfoCard(user: user),
+
+                  // logout button
+                  const SizedBox(height: 16),
+                  NooLogoutButton(),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/providers/auth_providers.dart';
 import 'package:mobile_2/core/services/auth_service_types.dart';
+import 'package:mobile_2/core/entities/user.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
 import '../widgets/shared/noo_text_input.dart';
 import '../widgets/shared/noo_button.dart';
@@ -56,20 +57,40 @@ class _AuthPageState extends ConsumerState<AuthPage> {
             usernameOrEmail: _usernameCtrl.text.trim(),
             password: _passwordCtrl.text,
           ),
+          // Don't persist token yet — we'll check role first
+          rememberToken: false,
         );
       },
     );
     if (result.isSuccess && result.data != null) {
-      // Update auth state
-      final authNotifier = ref.read(authStateProvider.notifier);
-      await authNotifier.login(
-        result.data!.token,
-        result.data!.payload,
-        user: result.data!.user,
-      );
+      final data = result.data!;
+      // Allow login only for students
+      if (data.payload.role != UserRole.student) {
+        if (mounted) {
+          await showDialog<void>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Доступ ограничен'),
+              content: const Text(
+                'Сейчас приложение доступно только для учеников.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Ок'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        // Update auth state and persist token only for allowed role
+        final authNotifier = ref.read(authStateProvider.notifier);
+        await authNotifier.login(data.token, data.payload, user: data.user);
 
-      // Navigation will be handled by router automatically
-      if (mounted) context.go('/courses');
+        // Navigation will be handled by router automatically
+        if (mounted) context.go('/courses');
+      }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(

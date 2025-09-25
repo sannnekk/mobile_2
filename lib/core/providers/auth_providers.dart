@@ -109,6 +109,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     AuthPayload? payload, {
     UserEntity? user,
   }) async {
+    // Ensure ApiClient also knows the token & payload for subsequent API calls
+    try {
+      final client = await _ref.read(apiClientProvider.future);
+      await client.setToken(
+        token,
+        (payload ?? state.userPayload)?.toJson() ?? {},
+      );
+    } catch (_) {
+      // Fallback to local-only persistence if ApiClient not ready
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     if (payload != null) {
@@ -141,6 +151,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await prefs.remove(_tokenKey);
     await prefs.remove(_payloadKey);
     await prefs.remove(_userKey);
+
+    // Clear token from ApiClient as well
+    try {
+      final client = await _ref.read(apiClientProvider.future);
+      await client.clearToken();
+    } catch (_) {}
 
     state = const AuthState(isAuthenticated: false, isLoading: false);
   }

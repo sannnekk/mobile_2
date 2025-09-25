@@ -13,7 +13,7 @@
 13. Pinned materials & chapters
 14. Assigned work comments
 15. ✅ Assigned work search
-16. Disallow login for anyone but students
+16. ✅ Disallow login for anyone but students
 17. Native back button handling
 18. Normal readme & docs
 19. ✅ Logout button
