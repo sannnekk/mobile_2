@@ -13,7 +13,6 @@
 13. ✅ Assigned work comments
 14. ✅ Assigned work search
 15. ✅ Disallow login for anyone but students
-16. Native back button handling
-17. Normal readme & docs
-18. ✅ Logout button
-19. ✅ Text comments in answer
+16. ✅ Native back button handling
+17. ✅ Logout button
+18. ✅ Text comments in answer

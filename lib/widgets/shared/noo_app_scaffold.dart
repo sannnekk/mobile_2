@@ -30,7 +30,7 @@ class NooAppScaffold extends StatelessWidget {
       ),
       body: child,
       bottomNavigationBar: Container(
-        height: 70,
+        // Background and shadow should also cover the system inset area.
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           boxShadow: [
@@ -41,41 +41,50 @@ class NooAppScaffold extends StatelessWidget {
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                context.go('/courses');
-                break;
-              case 1:
-                context.go('/assigned_works');
-                break;
-              case 2:
-                context.go('/calendar');
-                break;
-              case 3:
-                context.go('/profile');
-                break;
-            }
-          },
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: theme.colorScheme.secondary,
-          unselectedItemColor: theme.textTheme.labelMedium?.color,
-          selectedLabelStyle: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        child: SafeArea(
+          top: false,
+          left: false,
+          right: false,
+          // Add padding for bottom system inset while keeping content height consistent
+          child: SizedBox(
+            height: 70,
+            child: BottomNavigationBar(
+              currentIndex: currentIndex,
+              onTap: (index) {
+                switch (index) {
+                  case 0:
+                    context.go('/courses');
+                    break;
+                  case 1:
+                    context.go('/assigned_works');
+                    break;
+                  case 2:
+                    context.go('/calendar');
+                    break;
+                  case 3:
+                    context.go('/profile');
+                    break;
+                }
+              },
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: theme.colorScheme.secondary,
+              unselectedItemColor: theme.textTheme.labelMedium?.color,
+              selectedLabelStyle: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
+              items: _buildNavigationItems(context, currentIndex),
+            ),
           ),
-          unselectedLabelStyle: TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          landscapeLayout: BottomNavigationBarLandscapeLayout.centered,
-          items: _buildNavigationItems(context, currentIndex),
         ),
       ),
     );

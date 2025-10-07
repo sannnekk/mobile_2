@@ -15,6 +15,8 @@ class AuthInterceptor extends Interceptor {
       options.headers['Authorization'] = 'Bearer $token';
     }
 
+    options.headers['X-Origin'] = 'android/app';
+
     handler.next(options);
   }
 }

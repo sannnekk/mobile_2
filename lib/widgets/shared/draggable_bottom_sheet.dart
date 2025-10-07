@@ -80,48 +80,60 @@ class _DraggableBottomSheetState extends State<DraggableBottomSheet> {
               ),
             ],
           ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: theme.dividerColor.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+          // Ensure the sheet respects system insets (e.g., Android gesture/nav bar) and keyboard
+          child: SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-              Expanded(
-                child: widget.minimizedWidget != null
-                    ? ValueListenableBuilder<double>(
-                        valueListenable: _sizeNotifier,
-                        builder: (context, size, child) {
-                          final switchSize =
-                              (widget.minChildSize + widget.maxChildSize) / 2;
-                          return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            child: size < switchSize
-                                ? SingleChildScrollView(
-                                    key: const ValueKey('minimized'),
-                                    controller: scrollController,
-                                    child: Center(
-                                      child: widget.minimizedWidget!,
-                                    ),
-                                  )
-                                : Container(
-                                    key: const ValueKey('expanded'),
-                                    child: widget.childBuilder(
-                                      context,
-                                      scrollController,
-                                    ),
-                                  ),
-                          );
-                        },
-                      )
-                    : widget.childBuilder(context, scrollController),
+              child: Column(
+                children: [
+                  // Handle
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.dividerColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: widget.minimizedWidget != null
+                        ? ValueListenableBuilder<double>(
+                            valueListenable: _sizeNotifier,
+                            builder: (context, size, child) {
+                              final switchSize =
+                                  (widget.minChildSize + widget.maxChildSize) /
+                                  2;
+                              return AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 200),
+                                child: size < switchSize
+                                    ? SingleChildScrollView(
+                                        key: const ValueKey('minimized'),
+                                        controller: scrollController,
+                                        child: Center(
+                                          child: widget.minimizedWidget!,
+                                        ),
+                                      )
+                                    : Container(
+                                        key: const ValueKey('expanded'),
+                                        child: widget.childBuilder(
+                                          context,
+                                          scrollController,
+                                        ),
+                                      ),
+                              );
+                            },
+                          )
+                        : widget.childBuilder(context, scrollController),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },

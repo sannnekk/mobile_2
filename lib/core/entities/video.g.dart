@@ -28,7 +28,9 @@ VideoEntity _$VideoEntityFromJson(Map<String, dynamic> json) => VideoEntity(
       VideoState.notUploaded,
   uniqueIdentifier: json['uniqueIdentifier'] as String? ?? '',
   duration: (json['duration'] as num?)?.toInt() ?? 0,
-  uploadedBy: UserEntity.fromJson(json['uploadedBy'] as Map<String, dynamic>),
+  uploadedBy: json['uploadedBy'] == null
+      ? null
+      : UserEntity.fromJson(json['uploadedBy'] as Map<String, dynamic>),
   uploadUrl: json['uploadUrl'] as String?,
   publishedAt: json['publishedAt'] == null
       ? null

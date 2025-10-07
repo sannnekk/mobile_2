@@ -26,7 +26,7 @@ class VideoEntity extends ApiEntity {
   final VideoState state;
   final String uniqueIdentifier;
   final int duration;
-  final UserEntity uploadedBy;
+  final UserEntity? uploadedBy;
   final String? uploadUrl;
   final DateTime? publishedAt;
   @JsonKey(fromJson: videoAccessTypeFromJson, toJson: videoAccessTypeToJson)
