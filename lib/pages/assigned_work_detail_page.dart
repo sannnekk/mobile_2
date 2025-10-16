@@ -152,17 +152,22 @@ class _AssignedWorkDetailPageState
   }
 
   void _showSuccessModal() {
+    final router = GoRouter.of(context);
     showDialog(
       context: context,
       barrierDismissible: false, // Make it uncloseable
-      builder: (context) => NooWorkSubmittedModal(
+      builder: (dialogContext) => NooWorkSubmittedModal(
         onViewWork: () async {
-          Navigator.of(context).pop(); // Close modal
+          Navigator.of(dialogContext).pop(); // Close modal
           await _refetchWork();
         },
         onReturnToList: () {
-          Navigator.of(context).pop(); // Close modal
-          context.go('/assigned_works');
+          Navigator.of(dialogContext).pop(); // Close modal
+          if (router.canPop()) {
+            router.pop();
+          } else {
+            router.go('/assigned_works');
+          }
         },
       ),
     );
@@ -190,7 +195,13 @@ class _AssignedWorkDetailPageState
           title: NooTextTitle('Работа', size: NooTitleSize.small),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/assigned_works'),
+            onPressed: () {
+              if (GoRouter.of(context).canPop()) {
+                context.pop();
+              } else {
+                context.go('/assigned_works');
+              }
+            },
           ),
           actions: workAsync.maybeWhen(
             data: (work) {

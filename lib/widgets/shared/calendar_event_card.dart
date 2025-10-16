@@ -40,7 +40,7 @@ class CalendarEventCard extends ConsumerWidget {
           ? () {
               final ulid = extractUlid(event.url!);
               if (ulid != null) {
-                context.go('/assigned_work/$ulid');
+                context.push('/assigned_work/$ulid');
               }
             }
           : null,

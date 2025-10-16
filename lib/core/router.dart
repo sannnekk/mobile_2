@@ -100,7 +100,7 @@ class ProfileRoute extends GoRouteData {
     actions: [
       IconButton(
         icon: const Icon(Icons.settings),
-        onPressed: () => GoRouter.of(context).go('/settings'),
+        onPressed: () => context.push('/settings'),
       ),
     ],
   );

@@ -126,6 +126,7 @@ class AssignedWorkCard extends StatelessWidget {
   }
 
   void _navigateToDetail(BuildContext context) {
-    context.go('/assigned_work/${work.id}');
+    // Push detail page to keep native back gestures functional
+    context.push('/assigned_work/${work.id}');
   }
 }

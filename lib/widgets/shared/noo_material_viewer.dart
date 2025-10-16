@@ -134,7 +134,7 @@ class _MaterialViewerState extends ConsumerState<MaterialViewer> {
         () => service.createAssignedWorkFromMaterial(widget.material.slug),
       );
       if (result.isSuccess && result.data != null) {
-        if (mounted) context.go('/assigned_work/${result.data}');
+        if (mounted) context.push('/assigned_work/${result.data}');
       }
     } catch (e) {
       // Handle error - maybe show a snackbar

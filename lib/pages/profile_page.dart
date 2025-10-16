@@ -140,7 +140,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         IconButton(
           icon: const Icon(Icons.settings),
           onPressed: () {
-            context.go('/settings');
+            context.push('/settings');
           },
         ),
       ],

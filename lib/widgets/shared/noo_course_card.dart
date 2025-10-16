@@ -93,9 +93,8 @@ class NooCourseCard extends StatelessWidget {
   }
 
   void _onCardTap(BuildContext context) {
-    // Navigate to course details page with slug
-    // The CourseDetailsRoute class ensures type safety for the route definition
-    context.go('/course/${course.slug}');
+    // Push course details so platform back gestures can return to the list
+    context.push('/course/${course.slug}');
   }
 
   void _showActionsMenu(BuildContext context) {

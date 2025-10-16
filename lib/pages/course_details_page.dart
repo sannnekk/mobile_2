@@ -158,7 +158,13 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/courses'),
+          onPressed: () {
+            if (GoRouter.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/courses');
+            }
+          },
         ),
       ),
       body: Stack(
