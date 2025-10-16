@@ -25,7 +25,6 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
   final AssignedWorkAnswersState answersState;
   final int currentTaskIndex;
   final Function(int) onTaskSelected;
-  final ScrollController? scrollController;
   final VoidCallback? onWorkUpdated;
   // Draft of student comment lifted to parent (detail page)
   final rt.RichText? studentCommentDraft;
@@ -37,7 +36,6 @@ class NooAssignedWorkTaskNavigationSheet extends StatefulWidget {
     required this.answersState,
     required this.currentTaskIndex,
     required this.onTaskSelected,
-    this.scrollController,
     this.onWorkUpdated,
     this.studentCommentDraft,
     this.onStudentCommentChanged,
@@ -335,8 +333,9 @@ class _NooAssignedWorkTaskNavigationSheetState
             ? null
             : _getMode(widget.assignedWork!);
 
+        final scrollController = PrimaryScrollController.of(context);
         return GridView.builder(
-          controller: widget.scrollController,
+          controller: scrollController,
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -408,8 +407,9 @@ class _NooAssignedWorkTaskNavigationSheetState
   }
 
   Widget _buildInfoTab(BuildContext context, ThemeData theme) {
+    final scrollController = PrimaryScrollController.of(context);
     return SingleChildScrollView(
-      controller: widget.scrollController,
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,8 +511,9 @@ class _NooAssignedWorkTaskNavigationSheetState
     final initialStudentComment =
         widget.studentCommentDraft ?? work.studentComment;
 
+    final scrollController = PrimaryScrollController.of(context);
     return SingleChildScrollView(
-      controller: widget.scrollController,
+      controller: scrollController,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

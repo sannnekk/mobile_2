@@ -181,18 +181,13 @@ class _CourseDetailsPageState extends ConsumerState<CourseDetailsPage> {
               snap: true,
               snapSizes: const [0.1, 0.85],
               minimizedWidget: NooTextTitle('Материалы'),
-              childBuilder: (context, scrollController) {
-                if (isCompact && state.course != null) {
-                  return ChapterTree(
-                    chapters: state.course!.chapters ?? [],
-                    selectedMaterialId: state.selectedMaterialId,
-                    onSelectMaterial: (id) => notifier.selectMaterial(id),
-                    scrollController: scrollController,
-                  );
-                } else {
-                  return const SizedBox.shrink();
-                }
-              },
+              child: isCompact && state.course != null
+                  ? ChapterTree(
+                      chapters: state.course!.chapters ?? [],
+                      selectedMaterialId: state.selectedMaterialId,
+                      onSelectMaterial: (id) => notifier.selectMaterial(id),
+                    )
+                  : const SizedBox.shrink(),
             ),
           if (state.isLoading && state.course != null)
             const Positioned(

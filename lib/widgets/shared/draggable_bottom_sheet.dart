@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DraggableBottomSheet extends StatefulWidget {
-  final Widget Function(BuildContext, ScrollController) childBuilder;
+  final Widget child;
   final double initialChildSize;
   final double minChildSize;
   final double maxChildSize;
@@ -14,7 +14,7 @@ class DraggableBottomSheet extends StatefulWidget {
 
   const DraggableBottomSheet({
     super.key,
-    required this.childBuilder,
+    required this.child,
     this.initialChildSize = 0.07,
     this.minChildSize = 0.07,
     this.maxChildSize = 0.9,
@@ -121,15 +121,18 @@ class _DraggableBottomSheetState extends State<DraggableBottomSheet> {
                                       )
                                     : Container(
                                         key: const ValueKey('expanded'),
-                                        child: widget.childBuilder(
-                                          context,
-                                          scrollController,
+                                        child: PrimaryScrollController(
+                                          controller: scrollController,
+                                          child: widget.child,
                                         ),
                                       ),
                               );
                             },
                           )
-                        : widget.childBuilder(context, scrollController),
+                        : PrimaryScrollController(
+                            controller: scrollController,
+                            child: widget.child,
+                          ),
                   ),
                 ],
               ),

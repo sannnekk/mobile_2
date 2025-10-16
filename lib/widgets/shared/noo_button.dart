@@ -25,12 +25,11 @@ class NooButton extends StatelessWidget {
   });
 
   Color _backgroundColor(BuildContext context) {
-    final theme = Theme.of(context);
     switch (style) {
       case NooButtonStyle.primary:
-        return theme.primaryColor;
+        return AppColors.primary;
       case NooButtonStyle.secondary:
-        return Colors.transparent;
+        return AppColors.secondary;
       case NooButtonStyle.inline:
         return Colors.transparent;
       case NooButtonStyle.danger:
@@ -42,7 +41,7 @@ class NooButton extends StatelessWidget {
     final theme = Theme.of(context);
     switch (style) {
       case NooButtonStyle.primary:
-        return theme.textTheme.labelMedium?.color ?? Colors.white;
+        return Colors.black;
       case NooButtonStyle.secondary:
         return theme.textTheme.labelMedium?.color ?? Colors.black;
       case NooButtonStyle.inline:

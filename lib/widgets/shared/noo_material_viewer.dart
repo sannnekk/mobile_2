@@ -119,6 +119,7 @@ class _MaterialViewerState extends ConsumerState<MaterialViewer> {
     return SizedBox(
       width: double.infinity,
       child: NooButton(
+        style: NooButtonStyle.primary,
         onPressed: _isCreatingWork ? null : _createAssignedWork,
         loading: _isCreatingWork,
         label: 'К работе',

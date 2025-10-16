@@ -306,24 +306,21 @@ class _AssignedWorkDetailPageState
             '${_currentTaskIndex + 1} / ${work.work?.tasks?.length ?? 0}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
-          childBuilder: (context, scrollController) {
-            return NooAssignedWorkTaskNavigationSheet(
-              assignedWork: work,
-              answersState: answersState,
-              currentTaskIndex: _currentTaskIndex,
-              onTaskSelected: _onTaskSelected,
-              scrollController: scrollController,
-              onWorkUpdated: () {
-                ref.invalidate(assignedWorkDetailProvider(widget.workId));
-              },
-              studentCommentDraft: _studentCommentDraft,
-              onStudentCommentChanged: (value) {
-                setState(() {
-                  _studentCommentDraft = value;
-                });
-              },
-            );
-          },
+          child: NooAssignedWorkTaskNavigationSheet(
+            assignedWork: work,
+            answersState: answersState,
+            currentTaskIndex: _currentTaskIndex,
+            onTaskSelected: _onTaskSelected,
+            onWorkUpdated: () {
+              ref.invalidate(assignedWorkDetailProvider(widget.workId));
+            },
+            studentCommentDraft: _studentCommentDraft,
+            onStudentCommentChanged: (value) {
+              setState(() {
+                _studentCommentDraft = value;
+              });
+            },
+          ),
         ),
       ],
     );

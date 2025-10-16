@@ -7,7 +7,6 @@ class ChapterTree extends StatefulWidget {
   final String? selectedMaterialId;
   final ValueChanged<String>? onSelectMaterial;
   final int maxDepth;
-  final ScrollController? scrollController;
 
   const ChapterTree({
     super.key,
@@ -15,7 +14,6 @@ class ChapterTree extends StatefulWidget {
     this.selectedMaterialId,
     this.onSelectMaterial,
     this.maxDepth = 3,
-    this.scrollController,
   });
 
   @override
@@ -100,7 +98,7 @@ class _ChapterTreeState extends State<ChapterTree> {
     return ListView.builder(
       shrinkWrap: true,
       //physics: const NeverScrollableScrollPhysics(),
-      controller: widget.scrollController,
+      controller: PrimaryScrollController.of(context),
       padding: EdgeInsets.zero,
       itemCount: _visibleChapters.length,
       itemBuilder: (context, index) {
