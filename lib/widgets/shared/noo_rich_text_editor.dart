@@ -18,6 +18,8 @@ class NooRichTextEditor extends ConsumerStatefulWidget {
   final ScrollController? scrollController;
   final bool showToolbar;
   final bool readOnly;
+  final FocusNode? focusNode;
+  final ValueChanged<bool>? onFocusChange;
 
   const NooRichTextEditor({
     super.key,
@@ -28,6 +30,8 @@ class NooRichTextEditor extends ConsumerStatefulWidget {
     this.scrollController,
     this.showToolbar = true,
     this.readOnly = false,
+    this.focusNode,
+    this.onFocusChange,
   });
 
   @override
@@ -37,13 +41,19 @@ class NooRichTextEditor extends ConsumerStatefulWidget {
 class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
   late QuillController _controller;
   late FocusNode _focusNode;
+  bool _ownsFocusNode = false;
+  bool _focusListenerAttached = false;
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _ownsFocusNode = widget.focusNode == null;
+    if (widget.onFocusChange != null) {
+      _attachFocusListener();
+    }
     final document = widget.initialRichText != null
         ? Document.fromDelta(widget.initialRichText!.delta)
         : Document();
@@ -58,6 +68,24 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
   @override
   void didUpdateWidget(NooRichTextEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      _detachFocusListener();
+      if (_ownsFocusNode) {
+        _focusNode.dispose();
+      }
+      _focusNode = widget.focusNode ?? FocusNode();
+      _ownsFocusNode = widget.focusNode == null;
+      if (widget.onFocusChange != null) {
+        _attachFocusListener();
+      }
+    } else if (widget.onFocusChange != oldWidget.onFocusChange) {
+      if (widget.onFocusChange == null) {
+        _detachFocusListener();
+      } else if (!_focusListenerAttached) {
+        _attachFocusListener();
+      }
+    }
+
     if (oldWidget.initialRichText != widget.initialRichText) {
       final newDoc = widget.initialRichText != null
           ? Document.fromDelta(widget.initialRichText!.delta)
@@ -103,7 +131,10 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    _detachFocusListener();
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
     _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     super.dispose();
@@ -313,6 +344,22 @@ class _NooRichTextEditorState extends ConsumerState<NooRichTextEditor> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _attachFocusListener() {
+    _focusNode.addListener(_handleFocusChange);
+    _focusListenerAttached = true;
+  }
+
+  void _detachFocusListener() {
+    if (_focusListenerAttached) {
+      _focusNode.removeListener(_handleFocusChange);
+      _focusListenerAttached = false;
+    }
+  }
+
+  void _handleFocusChange() {
+    widget.onFocusChange?.call(_focusNode.hasFocus);
   }
 }
 

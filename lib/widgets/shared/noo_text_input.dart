@@ -12,6 +12,8 @@ class NooTextInput extends StatefulWidget {
   final void Function(String)? onChanged;
   final void Function(String)? onSubmitted;
   final bool enabled;
+  final FocusNode? focusNode;
+  final ValueChanged<bool>? onFocusChange;
 
   const NooTextInput({
     super.key,
@@ -26,6 +28,8 @@ class NooTextInput extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.enabled = true,
+    this.focusNode,
+    this.onFocusChange,
   });
 
   @override
@@ -34,15 +38,21 @@ class NooTextInput extends StatefulWidget {
 
 class _NooTextInputState extends State<NooTextInput> {
   late final TextEditingController _controller;
-  late final FocusNode _focusNode;
+  late FocusNode _focusNode;
   bool _obscure = false;
+  bool _ownsFocusNode = false;
+  bool _focusListenerAttached = false;
 
   @override
   void initState() {
     super.initState();
     _controller =
         widget.controller ?? TextEditingController(text: widget.initialValue);
-    _focusNode = FocusNode();
+    _focusNode = widget.focusNode ?? FocusNode();
+    _ownsFocusNode = widget.focusNode == null;
+    if (widget.onFocusChange != null) {
+      _attachFocusListener();
+    }
     _obscure = widget.password;
   }
 
@@ -53,13 +63,50 @@ class _NooTextInputState extends State<NooTextInput> {
         widget.initialValue != _controller.text) {
       _controller.text = widget.initialValue ?? '';
     }
+
+    if (widget.focusNode != oldWidget.focusNode) {
+      _detachFocusListener();
+      if (_ownsFocusNode) {
+        _focusNode.dispose();
+      }
+      _focusNode = widget.focusNode ?? FocusNode();
+      _ownsFocusNode = widget.focusNode == null;
+      if (widget.onFocusChange != null) {
+        _attachFocusListener();
+      }
+    } else if (widget.onFocusChange != oldWidget.onFocusChange) {
+      if (widget.onFocusChange == null) {
+        _detachFocusListener();
+      } else if (!_focusListenerAttached) {
+        _attachFocusListener();
+      }
+    }
   }
 
   @override
   void dispose() {
     if (widget.controller == null) _controller.dispose();
-    _focusNode.dispose();
+    _detachFocusListener();
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
     super.dispose();
+  }
+
+  void _attachFocusListener() {
+    _focusNode.addListener(_handleFocusChange);
+    _focusListenerAttached = true;
+  }
+
+  void _detachFocusListener() {
+    if (_focusListenerAttached) {
+      _focusNode.removeListener(_handleFocusChange);
+      _focusListenerAttached = false;
+    }
+  }
+
+  void _handleFocusChange() {
+    widget.onFocusChange?.call(_focusNode.hasFocus);
   }
 
   @override

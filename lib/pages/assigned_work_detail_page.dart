@@ -27,6 +27,9 @@ class _AssignedWorkDetailPageState
     extends ConsumerState<AssignedWorkDetailPage> {
   late PageController _pageController;
   int _currentTaskIndex = 0;
+  int _focusTargetIndex = 0;
+  int _focusRequestId = 0;
+  bool _hasInitializedPage = false;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   bool _isSubmitting = false;
@@ -73,6 +76,7 @@ class _AssignedWorkDetailPageState
 
     setState(() {
       _currentTaskIndex = index;
+      _focusTargetIndex = index;
     });
     _pageController.animateToPage(
       index,
@@ -91,6 +95,12 @@ class _AssignedWorkDetailPageState
   void _onPageChanged(int index) {
     setState(() {
       _currentTaskIndex = index;
+      _focusTargetIndex = index;
+      if (_hasInitializedPage) {
+        _focusRequestId++;
+      } else {
+        _hasInitializedPage = true;
+      }
     });
   }
 
@@ -292,6 +302,11 @@ class _AssignedWorkDetailPageState
                 );
                 answersNotifier.updateAnswer(taskId, word, content);
               },
+              focusRequestId: _focusRequestId,
+              shouldFocus:
+                  mode == AssignedWorkMode.solve &&
+                  _focusRequestId > 0 &&
+                  index == _focusTargetIndex,
             );
           },
         ),

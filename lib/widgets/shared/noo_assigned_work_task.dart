@@ -20,6 +20,8 @@ class NooAssignedWorkTask extends StatefulWidget {
   final AssignedWorkMode mode;
   final Function(String taskId, String? word, rt.RichText?)? onAnswerChanged;
   final int taskNumber;
+  final int focusRequestId;
+  final bool shouldFocus;
 
   const NooAssignedWorkTask({
     super.key,
@@ -29,6 +31,8 @@ class NooAssignedWorkTask extends StatefulWidget {
     required this.mode,
     this.onAnswerChanged,
     required this.taskNumber,
+    this.focusRequestId = 0,
+    this.shouldFocus = false,
   });
 
   @override
@@ -37,6 +41,11 @@ class NooAssignedWorkTask extends StatefulWidget {
 
 class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
   bool _showRightAnswer = false;
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _richTextScrollController = ScrollController();
+  final FocusNode _answerFocusNode = FocusNode();
+  final GlobalKey _answerSectionKey = GlobalKey();
+  bool _focusListenerAttached = false;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +65,13 @@ class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
         widget.task.isAnswerVisibleBeforeCheck &&
         hasRightAnswer;
 
+    if (!_focusListenerAttached) {
+      _answerFocusNode.addListener(_handleFocusChange);
+      _focusListenerAttached = true;
+    }
+
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,32 +98,47 @@ class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
 
           // Input field
           if (widget.task.type == WorkTaskType.word) ...[
-            NooTextInput(
-              label: "Ваш ответ",
-              initialValue: widget.answer?.word,
-              enabled: widget.mode == AssignedWorkMode.solve,
-              onChanged: widget.mode == AssignedWorkMode.solve
-                  ? (value) => widget.onAnswerChanged?.call(
-                      widget.task.id,
-                      value,
-                      null,
-                    )
-                  : null,
+            Container(
+              key: _answerSectionKey,
+              child: NooTextInput(
+                label: "Ваш ответ",
+                initialValue: widget.answer?.word,
+                enabled: widget.mode == AssignedWorkMode.solve,
+                focusNode: _answerFocusNode,
+                onFocusChange: (hasFocus) {
+                  if (hasFocus) _scrollToAnswer();
+                },
+                onChanged: widget.mode == AssignedWorkMode.solve
+                    ? (value) => widget.onAnswerChanged?.call(
+                        widget.task.id,
+                        value,
+                        null,
+                      )
+                    : null,
+              ),
             ),
           ] else ...[
-            widget.mode == AssignedWorkMode.solve
-                ? NooRichTextEditor(
-                    initialRichText: widget.answer?.content,
-                    onChanged: (value) => widget.onAnswerChanged?.call(
-                      widget.task.id,
-                      null,
-                      value,
+            Container(
+              key: _answerSectionKey,
+              child: widget.mode == AssignedWorkMode.solve
+                  ? NooRichTextEditor(
+                      initialRichText: widget.answer?.content,
+                      onChanged: (value) => widget.onAnswerChanged?.call(
+                        widget.task.id,
+                        null,
+                        value,
+                      ),
+                      focusNode: _answerFocusNode,
+                      onFocusChange: (hasFocus) {
+                        if (hasFocus) _scrollToAnswer();
+                      },
+                      scrollController: _richTextScrollController,
+                    )
+                  : NooRichTextDisplay(
+                      richText: widget.answer?.content ?? rt.RichText.empty(),
+                      padding: const EdgeInsets.all(0),
                     ),
-                  )
-                : NooRichTextDisplay(
-                    richText: widget.answer?.content ?? rt.RichText.empty(),
-                    padding: const EdgeInsets.all(0),
-                  ),
+            ),
           ],
           const SizedBox(height: 24),
 
@@ -287,5 +317,85 @@ class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
         ],
       ),
     );
+  }
+
+  @override
+  void didUpdateWidget(NooAssignedWorkTask oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.mode != AssignedWorkMode.solve &&
+        oldWidget.mode == AssignedWorkMode.solve &&
+        _answerFocusNode.hasFocus) {
+      _answerFocusNode.unfocus();
+    }
+
+    final shouldHandleFocus =
+        widget.shouldFocus &&
+        widget.focusRequestId != oldWidget.focusRequestId &&
+        widget.focusRequestId != 0 &&
+        widget.mode == AssignedWorkMode.solve;
+
+    if (shouldHandleFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _requestAnswerFocus();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_focusListenerAttached) {
+      _answerFocusNode.removeListener(_handleFocusChange);
+    }
+    _scrollController.dispose();
+    _richTextScrollController.dispose();
+    _answerFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleFocusChange() {
+    if (_answerFocusNode.hasFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToAnswer();
+      });
+    }
+  }
+
+  Future<void> _scrollToAnswer() async {
+    final context = _answerSectionKey.currentContext;
+    if (context != null) {
+      await Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 250),
+        alignment: 0.0,
+        curve: Curves.easeInOut,
+      );
+
+      if (_scrollController.hasClients) {
+        final position = _scrollController.position;
+        var targetOffset = position.pixels - 50;
+        if (targetOffset < position.minScrollExtent) {
+          targetOffset = position.minScrollExtent;
+        } else if (targetOffset > position.maxScrollExtent) {
+          targetOffset = position.maxScrollExtent;
+        }
+
+        if ((targetOffset - position.pixels).abs() > 0.5) {
+          await _scrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    }
+  }
+
+  void _requestAnswerFocus() {
+    if (!_answerFocusNode.hasFocus) {
+      _answerFocusNode.requestFocus();
+    }
+    _scrollToAnswer();
   }
 }
