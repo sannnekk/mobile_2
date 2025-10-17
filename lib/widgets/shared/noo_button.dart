@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../styles/colors.dart';
 import 'noo_loader.dart';
 
-enum NooButtonStyle { primary, secondary, inline, danger }
+enum NooButtonStyle { primary, secondary, inline, danger, tertiary }
 
 class NooButton extends StatelessWidget {
   final String label;
@@ -34,6 +34,8 @@ class NooButton extends StatelessWidget {
         return Colors.transparent;
       case NooButtonStyle.danger:
         return AppColors.danger;
+      case NooButtonStyle.tertiary:
+        return AppColors.borderColor;
     }
   }
 
@@ -48,6 +50,8 @@ class NooButton extends StatelessWidget {
         return theme.hintColor;
       case NooButtonStyle.danger:
         return Colors.white;
+      case NooButtonStyle.tertiary:
+        return theme.textTheme.labelMedium?.color ?? Colors.black;
     }
   }
 

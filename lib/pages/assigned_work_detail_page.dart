@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_2/core/entities/assigned_work.dart';
+import 'package:mobile_2/core/entities/work.dart';
 import 'package:mobile_2/core/providers/assigned_work_providers.dart';
 import 'package:mobile_2/core/utils/api_response_handler.dart';
+import 'package:mobile_2/styles/colors.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_task.dart';
 import 'package:mobile_2/widgets/shared/noo_assigned_work_task_navigation_sheet.dart';
+import 'package:mobile_2/widgets/shared/noo_button.dart';
 import 'package:mobile_2/widgets/shared/noo_error_view.dart';
 import 'package:mobile_2/widgets/shared/noo_loading_overlay.dart';
 import 'package:mobile_2/widgets/shared/noo_text_title.dart';
@@ -109,12 +112,25 @@ class _AssignedWorkDetailPageState
     final answersState = ref.read(assignedWorkAnswersProvider(widget.workId));
 
     workAsync.whenData((work) async {
+      final tasks = work.work?.tasks ?? [];
+      final unsolvedTaskOrders = _collectUnsolvedTaskOrders(
+        tasks,
+        answersState.answers,
+      );
+
+      final shouldSubmit = await _showSubmitConfirmationDialog(
+        unsolvedTaskOrders: unsolvedTaskOrders,
+      );
+
+      if (shouldSubmit != true) {
+        return;
+      }
+
       setState(() {
         _isSubmitting = true;
       });
 
       try {
-        // Get all answers from the state
         final answers = answersState.answers.values.toList();
 
         // Call the solve API
@@ -159,6 +175,85 @@ class _AssignedWorkDetailPageState
         }
       }
     });
+  }
+
+  List<int> _collectUnsolvedTaskOrders(
+    List<WorkTaskEntity> tasks,
+    Map<String, AssignedWorkAnswerEntity> answers,
+  ) {
+    return tasks
+        .where((task) => _isTaskAnswerEmpty(task, answers[task.id]))
+        .map((task) => task.order)
+        .toList()
+      ..sort();
+  }
+
+  bool _isTaskAnswerEmpty(
+    WorkTaskEntity task,
+    AssignedWorkAnswerEntity? answer,
+  ) {
+    if (answer == null) return true;
+
+    switch (task.type) {
+      case WorkTaskType.word:
+        final value = answer.word?.trim() ?? '';
+        return value.isEmpty;
+      case WorkTaskType.text:
+      case WorkTaskType.essay:
+      case WorkTaskType.finalEssay:
+      case WorkTaskType.dictation:
+        final content = answer.content;
+        return content == null || content.isEmpty();
+    }
+  }
+
+  Future<bool?> _showSubmitConfirmationDialog({
+    required List<int> unsolvedTaskOrders,
+  }) async {
+    if (!mounted) return false;
+
+    final hasUnsolvedTasks = unsolvedTaskOrders.isNotEmpty;
+    final unsolvedList = unsolvedTaskOrders.getRange(0, 10).join(', ');
+
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        return AlertDialog(
+          title: const Text('Отправить работу?'),
+          backgroundColor: theme.colorScheme.surface,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Вы уверены, что хотите отправить работу на проверку?',
+              ),
+              if (hasUnsolvedTasks) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Не во всех заданиях есть ответы. Проверьте задания: $unsolvedList',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.warning,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            NooButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              label: 'Отмена',
+              style: NooButtonStyle.tertiary,
+            ),
+            NooButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              label: 'Отправить',
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showSuccessModal() {
