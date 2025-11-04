@@ -233,9 +233,9 @@ class _PillTabBarState extends State<_PillTabBar>
           _updateTabMetrics();
         });
 
-        final tabWidgets = List<Widget>.generate(
-          widget.tabs.length,
-          (index) => _PillTab(
+        final tabWidgets = List<Widget>.generate(widget.tabs.length, (index) {
+          final normalizedChild = _normalizeTabChild(widget.tabs[index]);
+          return _PillTab(
             key: _tabKeys[index],
             isSelected: widget.controller.index == index,
             onTap: () {
@@ -243,9 +243,9 @@ class _PillTabBarState extends State<_PillTabBar>
               widget.onTap?.call(index);
             },
             theme: theme,
-            child: widget.tabs[index],
-          ),
-        );
+            child: normalizedChild,
+          );
+        });
 
         final content = widget.expandEvenly
             ? Row(
@@ -339,20 +339,39 @@ class _PillTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor =
+        theme.textTheme.bodyMedium?.color ?? theme.colorScheme.onSurface;
+    final resolvedTextStyle =
+        (theme.textTheme.labelLarge ?? const TextStyle(fontSize: 14)).copyWith(
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          color: textColor,
+        );
+
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: DefaultTextStyle(
-          style: (theme.textTheme.labelLarge ?? const TextStyle(fontSize: 14))
-              .copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: theme.textTheme.bodyMedium?.color,
-              ),
-          child: child,
+        child: IconTheme(
+          data: IconThemeData(color: textColor),
+          child: DefaultTextStyle(style: resolvedTextStyle, child: child),
         ),
       ),
     );
   }
+}
+
+Widget _normalizeTabChild(Widget original) {
+  if (original is Tab) {
+    if (original.child != null) {
+      return original.child!;
+    }
+    if (original.text != null) {
+      return Text(original.text!);
+    }
+    if (original.icon != null) {
+      return original.icon!;
+    }
+  }
+  return original;
 }
