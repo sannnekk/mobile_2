@@ -27,11 +27,15 @@ class _NooVideoViewState extends State<NooVideoView> {
       final element = IFrameElement()
         ..width = '100%'
         ..height = '100%'
-        ..src = widget.url
         ..allow =
             'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
         ..allowFullscreen = true
         ..style.border = '0';
+
+      // Helps YouTube avoid 153 errors by providing a compatible referrer policy.
+      element.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      element.referrerPolicy = 'strict-origin-when-cross-origin';
+      element.src = widget.url;
       return element;
     });
   }

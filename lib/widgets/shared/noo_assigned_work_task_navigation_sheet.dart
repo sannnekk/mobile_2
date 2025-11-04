@@ -142,7 +142,6 @@ class _NooAssignedWorkTaskNavigationSheetState
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.primary),
             child: const Text('Сдвинуть'),
           ),
         ],
@@ -188,7 +187,6 @@ class _NooAssignedWorkTaskNavigationSheetState
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(foregroundColor: AppColors.primary),
               child: const Text('Переделать'),
             ),
           ],

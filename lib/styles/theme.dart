@@ -32,6 +32,17 @@ class AppTheme {
     scaffoldBackgroundColor: AppColors.formBackground,
     cardColor: AppColors.formBackground,
     dividerColor: AppColors.borderColor,
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: lightColorScheme.secondary),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      confirmButtonStyle: TextButton.styleFrom(
+        foregroundColor: lightColorScheme.secondary,
+      ),
+      cancelButtonStyle: TextButton.styleFrom(
+        foregroundColor: lightColorScheme.secondary,
+      ),
+    ),
   );
 
   static ThemeData darkTheme = ThemeData(
@@ -42,5 +53,16 @@ class AppTheme {
     scaffoldBackgroundColor: AppDarkColors.lightBackgroundColor,
     cardColor: AppDarkColors.formBackground,
     dividerColor: AppDarkColors.borderColor,
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(foregroundColor: darkColorScheme.secondary),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      confirmButtonStyle: TextButton.styleFrom(
+        foregroundColor: darkColorScheme.secondary,
+      ),
+      cancelButtonStyle: TextButton.styleFrom(
+        foregroundColor: darkColorScheme.secondary,
+      ),
+    ),
   );
 }
