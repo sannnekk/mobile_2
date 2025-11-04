@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,6 +35,8 @@ class _AssignedWorkDetailPageState
   int _focusTargetIndex = 0;
   int _focusRequestId = 0;
   bool _hasInitializedPage = false;
+  bool _isSolveMode = false;
+  Timer? _focusDelayTimer;
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   bool _isSubmitting = false;
@@ -46,6 +50,8 @@ class _AssignedWorkDetailPageState
 
   @override
   void dispose() {
+    _focusDelayTimer?.cancel();
+    _focusDelayTimer = null;
     _pageController.dispose();
     _sheetController.dispose();
     super.dispose();
@@ -99,12 +105,35 @@ class _AssignedWorkDetailPageState
     setState(() {
       _currentTaskIndex = index;
       _focusTargetIndex = index;
-      if (_hasInitializedPage) {
-        _focusRequestId++;
-      } else {
-        _hasInitializedPage = true;
-      }
     });
+    _scheduleFocus(index);
+  }
+
+  void _scheduleFocus(int index) {
+    // Delay focus so quick swipes don't trigger scroll/focus on intermediate tasks.
+    if (!_isSolveMode || !mounted) return;
+
+    _focusDelayTimer?.cancel();
+    _focusDelayTimer = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted || _currentTaskIndex != index) {
+        _focusDelayTimer = null;
+        return;
+      }
+      setState(() {
+        _focusTargetIndex = index;
+        _focusRequestId++;
+        _hasInitializedPage = true;
+      });
+      _focusDelayTimer = null;
+    });
+  }
+
+  void _maybeScheduleInitialFocus(AssignedWorkMode mode, int tasksLength) {
+    if (mode != AssignedWorkMode.solve || tasksLength == 0) return;
+    if (_hasInitializedPage) return;
+    if (_focusDelayTimer?.isActive ?? false) return;
+
+    _scheduleFocus(_currentTaskIndex);
   }
 
   void _sendWork() async {
@@ -283,6 +312,14 @@ class _AssignedWorkDetailPageState
     ref.invalidate(assignedWorkDetailProvider(widget.workId));
     ref.invalidate(assignedWorkAnswersProvider(widget.workId));
     // Small delay to allow the providers to refetch
+    if (mounted) {
+      setState(() {
+        _hasInitializedPage = false;
+        _focusRequestId = 0;
+      });
+    }
+    _focusDelayTimer?.cancel();
+    _focusDelayTimer = null;
     await Future.delayed(const Duration(milliseconds: 100));
   }
 
@@ -311,18 +348,32 @@ class _AssignedWorkDetailPageState
           actions: workAsync.maybeWhen(
             data: (work) {
               final mode = _getMode(work);
-              if (mode == AssignedWorkMode.solve) {
-                return [
+              final tasksLength = work.work?.tasks?.length ?? 0;
+
+              return [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  tooltip: 'Предыдущее задание',
+                  onPressed: _currentTaskIndex > 0
+                      ? () => _onTaskSelected(_currentTaskIndex - 1)
+                      : null,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: 'Следующее задание',
+                  onPressed: _currentTaskIndex < tasksLength - 1
+                      ? () => _onTaskSelected(_currentTaskIndex + 1)
+                      : null,
+                ),
+                if (mode == AssignedWorkMode.solve)
                   IconButton(
                     icon: const Icon(Icons.send),
                     onPressed: _sendWork,
                     tooltip: 'Отправить работу',
                   ),
-                ];
-              }
-              return null;
+              ];
             },
-            orElse: () => null,
+            orElse: () => [],
           ),
         ),
         body: workAsync.when(
@@ -340,7 +391,15 @@ class _AssignedWorkDetailPageState
   ) {
     final tasks = work.work?.tasks ?? [];
     final mode = _getMode(work);
+    final isSolveMode = mode == AssignedWorkMode.solve;
+    if (!isSolveMode) {
+      _focusDelayTimer?.cancel();
+      _focusDelayTimer = null;
+    }
+    _isSolveMode = isSolveMode;
     _studentCommentDraft = _studentCommentDraft ?? work.studentComment;
+
+    _maybeScheduleInitialFocus(mode, tasks.length);
 
     if (mode == AssignedWorkMode.check) {
       return Center(

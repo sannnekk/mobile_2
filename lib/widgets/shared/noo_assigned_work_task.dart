@@ -364,32 +364,25 @@ class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
 
   Future<void> _scrollToAnswer() async {
     final context = _answerSectionKey.currentContext;
-    if (context != null) {
-      await Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 250),
-        alignment: 0.0,
-        curve: Curves.easeInOut,
-      );
+    if (context == null) return;
 
-      if (_scrollController.hasClients) {
-        final position = _scrollController.position;
-        var targetOffset = position.pixels - 50;
-        if (targetOffset < position.minScrollExtent) {
-          targetOffset = position.minScrollExtent;
-        } else if (targetOffset > position.maxScrollExtent) {
-          targetOffset = position.maxScrollExtent;
-        }
+    await Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 250),
+      alignment: 1.0,
+      curve: Curves.easeInOut,
+    );
 
-        if ((targetOffset - position.pixels).abs() > 0.5) {
-          await _scrollController.animateTo(
-            targetOffset,
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeInOut,
-          );
-        }
-      }
-    }
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+    if (position.maxScrollExtent <= 0) return;
+
+    await _scrollController.animateTo(
+      position.maxScrollExtent,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _requestAnswerFocus() {
