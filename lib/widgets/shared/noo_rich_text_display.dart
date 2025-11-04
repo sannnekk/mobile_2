@@ -68,7 +68,7 @@ class _NooRichTextDisplayState extends State<NooRichTextDisplay> {
   Color _commentColor(String? type) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     if (type == null) {
-      return isDark ? AppDarkColors.borderColor : AppColors.borderColor;
+      return isDark ? AppDarkColors.primary : AppColors.lila;
     }
     final lower = type.toLowerCase();
     if (lower == 'logic') {
@@ -80,7 +80,7 @@ class _NooRichTextDisplayState extends State<NooRichTextDisplay> {
     if (type.isNotEmpty && (type[0] == 'k' || type[0] == 'K')) {
       return isDark ? AppDarkColors.secondary : AppColors.secondary;
     }
-    return isDark ? AppDarkColors.borderColor : AppColors.borderColor;
+    return isDark ? AppDarkColors.primary : AppColors.lila;
   }
 
   TextStyle _defaultTextStyle(Attribute<dynamic> attribute) {
