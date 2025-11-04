@@ -366,14 +366,16 @@ class _NooAssignedWorkTaskState extends State<NooAssignedWorkTask> {
     final context = _answerSectionKey.currentContext;
     if (context == null) return;
 
+    final shouldScrollToBottom = widget.task.type == WorkTaskType.word;
+
     await Scrollable.ensureVisible(
       context,
       duration: const Duration(milliseconds: 250),
-      alignment: 1.0,
+      alignment: shouldScrollToBottom ? 1.0 : 0.1,
       curve: Curves.easeInOut,
     );
 
-    if (!_scrollController.hasClients) return;
+    if (!shouldScrollToBottom || !_scrollController.hasClients) return;
 
     final position = _scrollController.position;
     if (position.maxScrollExtent <= 0) return;
