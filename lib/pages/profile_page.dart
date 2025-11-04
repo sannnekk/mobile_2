@@ -108,6 +108,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     }
   }
 
+  Future<void> _refreshProfile() async {
+    await _fetchUserData();
+
+    final refreshedState = ref.read(authStateProvider);
+    final user = refreshedState.user;
+    if (user == null) return;
+
+    final statisticsProvider = userStatisticsProvider(
+      user.username,
+      _currentRequest,
+    );
+    final mentorsProvider = userMentorAssignmentsProvider(user.username);
+
+    ref.invalidate(statisticsProvider);
+    ref.invalidate(mentorsProvider);
+
+    try {
+      await ref.read(statisticsProvider.future);
+    } catch (_) {
+      // Let the UI handle errors via AsyncValue
+    }
+
+    try {
+      await ref.read(mentorsProvider.future);
+    } catch (_) {
+      // Let the UI handle errors via AsyncValue
+    }
+  }
+
   bool _areUsersEqual(UserEntity a, UserEntity b) {
     return a.id == b.id &&
         a.name == b.name &&
@@ -144,51 +173,55 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           },
         ),
       ],
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile header
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  // Huge avatar with edit capability
-                  _buildEditableAvatar(user),
-                  const SizedBox(height: 24),
+      child: RefreshIndicator(
+        onRefresh: _refreshProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // Profile header
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // Huge avatar with edit capability
+                    _buildEditableAvatar(user),
+                    const SizedBox(height: 24),
 
-                  // User info
-                  NooUserInfoCard(user: user),
+                    // User info
+                    NooUserInfoCard(user: user),
 
-                  // logout button
-                  const SizedBox(height: 16),
-                  NooLogoutButton(),
-                ],
+                    // logout button
+                    const SizedBox(height: 16),
+                    NooLogoutButton(),
+                  ],
+                ),
               ),
-            ),
 
-            // Tabs
-            NooTabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Статистика'),
-                Tab(text: 'Мои кураторы'),
-                Tab(text: 'Мои опросы'),
-              ],
-            ),
-
-            // Tab content
-            SizedBox(
-              height: 1200,
-              child: TabBarView(
+              // Tabs
+              NooTabBar(
                 controller: _tabController,
-                children: [
-                  _buildStatisticsTab(),
-                  _buildMentorsTab(),
-                  _buildPollsTab(),
+                tabs: const [
+                  Tab(text: 'Статистика'),
+                  Tab(text: 'Мои кураторы'),
+                  Tab(text: 'Мои опросы'),
                 ],
               ),
-            ),
-          ],
+
+              // Tab content
+              SizedBox(
+                height: 1200,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildStatisticsTab(),
+                    _buildMentorsTab(),
+                    _buildPollsTab(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -801,40 +834,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       userMentorAssignmentsProvider(user.username),
     );
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        // ignore: unused_result
-        ref.refresh(userMentorAssignmentsProvider(user.username));
-      },
-      child: mentorAssignmentsAsync.when(
-        data: (assignments) {
-          if (assignments.isEmpty) {
-            return const NooEmptyList(
-              title: 'Нет кураторов',
-              message: 'У вас пока нет назначенных кураторов',
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: assignments.length,
-            itemBuilder: (context, index) {
-              final assignment = assignments[index];
-              return NooMentorAssignmentCard(assignment: assignment);
-            },
+    return mentorAssignmentsAsync.when(
+      data: (assignments) {
+        if (assignments.isEmpty) {
+          return const NooEmptyList(
+            title: 'Нет кураторов',
+            message: 'У вас пока нет назначенных кураторов',
           );
-        },
-        loading: () => const Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
-        ),
-        error: (error, stack) => Padding(
+        }
+
+        return Padding(
           padding: const EdgeInsets.all(16),
-          child: NooErrorView(
-            error: 'Ошибка загрузки кураторов: $error',
-            onRetry: () =>
-                ref.refresh(userMentorAssignmentsProvider(user.username)),
+          child: Column(
+            children: assignments
+                .map(
+                  (assignment) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: NooMentorAssignmentCard(assignment: assignment),
+                  ),
+                )
+                .toList(),
           ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: NooErrorView(
+          error: 'Ошибка загрузки кураторов: $error',
+          onRetry: () =>
+              ref.refresh(userMentorAssignmentsProvider(user.username)),
         ),
       ),
     );
